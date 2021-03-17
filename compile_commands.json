@@ -1,0 +1,37 @@
+[
+{
+  "directory": "C:/ismailbulut/Developer/c_utils_library/build",
+  "command": "C:\\Users\\bulut\\scoop\\apps\\gcc\\current\\bin\\gcc.exe -D_DEBUG @CMakeFiles/c_utils.dir/includes_C.rsp -g -o CMakeFiles\\c_utils.dir\\src\\Array.c.obj -c C:\\ismailbulut\\Developer\\c_utils_library\\src\\Array.c",
+  "file": "C:/ismailbulut/Developer/c_utils_library/src/Array.c"
+},
+{
+  "directory": "C:/ismailbulut/Developer/c_utils_library/build",
+  "command": "C:\\Users\\bulut\\scoop\\apps\\gcc\\current\\bin\\gcc.exe -D_DEBUG @CMakeFiles/c_utils.dir/includes_C.rsp -g -o CMakeFiles\\c_utils.dir\\src\\LinkedList.c.obj -c C:\\ismailbulut\\Developer\\c_utils_library\\src\\LinkedList.c",
+  "file": "C:/ismailbulut/Developer/c_utils_library/src/LinkedList.c"
+},
+{
+  "directory": "C:/ismailbulut/Developer/c_utils_library/build",
+  "command": "C:\\Users\\bulut\\scoop\\apps\\gcc\\current\\bin\\gcc.exe -D_DEBUG @CMakeFiles/c_utils.dir/includes_C.rsp -g -o CMakeFiles\\c_utils.dir\\src\\Map.c.obj -c C:\\ismailbulut\\Developer\\c_utils_library\\src\\Map.c",
+  "file": "C:/ismailbulut/Developer/c_utils_library/src/Map.c"
+},
+{
+  "directory": "C:/ismailbulut/Developer/c_utils_library/build",
+  "command": "C:\\Users\\bulut\\scoop\\apps\\gcc\\current\\bin\\gcc.exe -D_DEBUG @CMakeFiles/c_utils.dir/includes_C.rsp -g -o CMakeFiles\\c_utils.dir\\src\\Timer.c.obj -c C:\\ismailbulut\\Developer\\c_utils_library\\src\\Timer.c",
+  "file": "C:/ismailbulut/Developer/c_utils_library/src/Timer.c"
+},
+{
+  "directory": "C:/ismailbulut/Developer/c_utils_library/build",
+  "command": "C:\\Users\\bulut\\scoop\\apps\\gcc\\current\\bin\\gcc.exe -D_DEBUG @CMakeFiles/c_utils.dir/includes_C.rsp -g -o CMakeFiles\\c_utils.dir\\src\\StringUtils.c.obj -c C:\\ismailbulut\\Developer\\c_utils_library\\src\\StringUtils.c",
+  "file": "C:/ismailbulut/Developer/c_utils_library/src/StringUtils.c"
+},
+{
+  "directory": "C:/ismailbulut/Developer/c_utils_library/build",
+  "command": "C:\\Users\\bulut\\scoop\\apps\\gcc\\current\\bin\\gcc.exe -D_DEBUG @CMakeFiles/c_utils.dir/includes_C.rsp -g -o CMakeFiles\\c_utils.dir\\src\\FileUtils.c.obj -c C:\\ismailbulut\\Developer\\c_utils_library\\src\\FileUtils.c",
+  "file": "C:/ismailbulut/Developer/c_utils_library/src/FileUtils.c"
+},
+{
+  "directory": "C:/ismailbulut/Developer/c_utils_library/build",
+  "command": "C:\\Users\\bulut\\scoop\\apps\\gcc\\current\\bin\\gcc.exe -D_DEBUG @CMakeFiles/c_utils_test.dir/includes_C.rsp -g -o CMakeFiles\\c_utils_test.dir\\test\\main.c.obj -c C:\\ismailbulut\\Developer\\c_utils_library\\test\\main.c",
+  "file": "C:/ismailbulut/Developer/c_utils_library/test/main.c"
+}
+]
