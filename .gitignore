@@ -1,6 +1,7 @@
 .cache/
 build/
 compile_commands.json
+cm.bat
 d.bat
 m.bat
 mc.bat
