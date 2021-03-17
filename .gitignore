@@ -1,5 +1,10 @@
 .cache/
 build/
+compile_commands.json
+d.bat
+m.bat
+mc.bat
+r.bat
 
 # Prerequisites
 *.d
