@@ -1,28 +1,18 @@
-#include "Map.h"
+#include "containers/Map.h"
 
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "Commons.h"
 #include "Debug.h"
-#include "LinkedList.h"
+#include "containers/LinkedList.h"
 
 // PRIVATE BEGIN
 typedef struct MapHeader {
     LinkedList* keys;
     LinkedList* values;
 } MapHeader;
-
-static inline bool _CompareEquals(const void* v1, const void* v2, size_t size) {
-    const char* _v1 = v1;
-    const char* _v2 = v2;
-    for (uint64_t i = 0; i < size; i++) {
-        if (*_v1++ != *_v2++) {
-            return false;
-        }
-    }
-    return true;
-}
 
 static uint64_t _FindKeyIndex(MapHeader* header, const void* key,
                               size_t keySize) {
@@ -32,7 +22,7 @@ static uint64_t _FindKeyIndex(MapHeader* header, const void* key,
             continue;
         }
         char* listKey = LinkedListGetElementValue(header->keys, i);
-        if (_CompareEquals(key, listKey, keySize)) {
+        if (MemEquals(key, listKey, keySize)) {
             return i;
         }
     }
@@ -47,7 +37,7 @@ static uint64_t _FindValueIndex(MapHeader* header, const void* value,
             continue;
         }
         char* listValue = LinkedListGetElementValue(header->values, i);
-        if (_CompareEquals(value, listValue, valueSize)) {
+        if (MemEquals(value, listValue, valueSize)) {
             return i;
         }
     }

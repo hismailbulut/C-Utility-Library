@@ -32,9 +32,11 @@ bool FileUtilsReadString(const char* path, String* outString) {
     bool success = false;
     FILE* file;
     char* buffer = malloc(fileSize + 1);
+    uint64_t readed;
     if (fopen_s(&file, path, "r") == 0) {
-        if (fread(buffer, 1, fileSize, file) > 0) {
+        if ((readed = fread(buffer, 1, fileSize, file)) > 0) {
             *outString = StringCreateCStr(buffer);
+            StringErase(outString, readed, 0);
             success = true;
         }
         fclose(file);

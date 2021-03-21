@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Map.h>
+#include "containers/Map.h"
 
 #define TEST_START bool _test_status_ = true
 
@@ -18,7 +18,7 @@
 
 void array_push_and_pop_time();
 
-void simple_test_String();
+void test_strings();
 
 void simple_test_LinkedList();
 

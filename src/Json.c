@@ -6,113 +6,101 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Array.h"
 #include "Debug.h"
-#include "Dictionary.h"
-#include "LinkedList.h"
+#include "Defines.h"
 #include "StringUtils.h"
-
-#define TAB "    "
+#include "containers/Array.h"
+#include "containers/Dictionary.h"
+#include "containers/LinkedList.h"
+#include "containers/List.h"
 
 // PRIVATE BEGIN
-
-static inline char* _NumberToString(int64_t numberValue) {
-    const int n = snprintf(NULL, 0, "%I64i", numberValue);
-    assert(n > 0);
-    char* str = malloc(n + 1);
-    int c = snprintf(str, n + 1, "%I64i", numberValue);
-    assert(c == n && str[c] == 0);
-    return str;
-}
-
-static inline char* _FloatToString(float floatValue) {
-    const int n = snprintf(NULL, 0, "%f", floatValue);
-    assert(n > 0);
-    char* str = malloc(n + 1);
-    int c = snprintf(str, n + 1, "%f", floatValue);
-    assert(c == n && str[c] == 0);
-    return str;
-}
-
-static String _ArrayToString(void* arrayValue, DictValueDataTypes type) {
-    String s = StringCreate(1);
-    StringAppendCStr(&s, "[ ");
-    for (uint64_t i = 0; i < ArrayGetSize(arrayValue); i++) {
-        if (type == TYPE_NUMBER_ARRAY) {
-            char* numberString = _NumberToString(((int64_t*)arrayValue)[i]);
-            StringAppendCStr(&s, numberString);
-            free(numberString);
-        } else if (type == TYPE_FLOAT_ARRAY) {
-            char* floatString = _FloatToString(((float*)arrayValue)[i]);
-            StringAppendCStr(&s, floatString);
-            free(floatString);
-        }
-        if (i < ArrayGetSize(arrayValue) - 1) {
-            StringAppendCStr(&s, ", ");
-        }
+#define APPEND_TABS(str, count)                \
+    {                                          \
+        for (uint32_t j = 0; j < count; j++) { \
+            StringAppendCStr(&str, "    ");    \
+        }                                      \
     }
-    StringAppendCStr(&s, " ]");
-    return s;
-}
-
-static String _LinkedListToString(LinkedList* list) {
-    String s = StringCreate(1);
-    StringAppendCStr(&s, "[ ");
-    uint64_t listSize = LinkedListGetSize(list);
-    for (uint64_t i = 0; i < listSize; i++) {
-        StringAppendChar(&s, '\"');
-        char* str = LinkedListGetElementValue(list, i);
-        size_t strLength = LinkedListGetElementSize(list, i);
-        if (str[strLength - 1] == '\0') {
-            StringAppendCStr(&s, str);
-        } else {
-            for (uint64_t j = 0; j < strLength; j++) {
-                StringAppendChar(&s, str[j]);
-            }
-        }
-        StringAppendChar(&s, '\"');
-        if (i < listSize - 1) {
-            StringAppendCStr(&s, ", ");
-        }
-    }
-    StringAppendCStr(&s, " ]");
-    return s;
-}
 
 String _JsonCreate(Dictionary* dict, uint32_t indentLevel);
 
-static String _GetValueString(DictValue* value, uint32_t indentLevel) {
+static String _ListToString(List* list, uint32_t indentLevel) {
+    uint64_t listSize = ListGetSize(list);
     String s = StringCreate(1);
-    if (value->type == TYPE_STRING && value->CString) {
-        StringAppendChar(&s, '\"');
-        StringAppendCStr(&s, value->CString);
-        StringAppendChar(&s, '\"');
-        return s;
-    } else if (value->type == TYPE_NUMBER && value->Number) {
-        char* numberString = _NumberToString(*value->Number);
-        StringAppendCStr(&s, numberString);
-        free(numberString);
-    } else if (value->type == TYPE_FLOAT && value->Float) {
-        char* floatString = _FloatToString(*value->Float);
-        StringAppendCStr(&s, floatString);
-        free(floatString);
-    } else if (value->type == TYPE_BOOL && value->Boolean) {
-        if (value->Boolean) {
-            StringAppendCStr(&s, "true");
+    StringAppendChar(&s, '[');
+    for (uint64_t i = 0; i < listSize; i++) {
+        ListNode* node = ListGetValue(list, i);
+        StringAppendChar(&s, '\n');
+        APPEND_TABS(s, indentLevel);
+        if (node == NULL) {
+            StringAppendCStr(&s, "null");
+        } else if (node->value == NULL) {
+            StringAppendCStr(&s, "null");
+        } else if (node->dataType == DATA_TYPE_STRING) {
+            StringAppendChar(&s, '"');
+            StringAppendCStr(&s, node->value);
+            StringAppendChar(&s, '"');
+        } else if (node->dataType == DATA_TYPE_NUMBER) {
+            StringAppendFormat(&s, "%I64i", *(int64_t*)node->value);
+        } else if (node->dataType == DATA_TYPE_FLOAT) {
+            StringAppendFormat(&s, "%f", *(float*)node->value);
+        } else if (node->dataType == DATA_TYPE_BOOL) {
+            if (*(bool*)node->value) {
+                StringAppendCStr(&s, "true");
+            } else {
+                StringAppendCStr(&s, "false");
+            }
+        } else if (node->dataType == DATA_TYPE_LIST) {
+            String listString = _ListToString(node->value, indentLevel + 1);
+            StringAppend(&s, &listString);
+            StringFree(&listString);
+        } else if (node->dataType == DATA_TYPE_OBJECT) {
+            String objectString = _JsonCreate(node->value, indentLevel + 1);
+            StringAppend(&s, &objectString);
+            StringFree(&objectString);
         } else {
-            StringAppendCStr(&s, "false");
+            StringAppendCStr(&s, "null");
         }
-    } else if ((value->type == TYPE_NUMBER_ARRAY || value->type == TYPE_FLOAT_ARRAY) && value->Array) {
-        StringFree(&s);
-        return _ArrayToString(value->Array, value->type);
-    } else if (value->type == TYPE_STRING_LIST && value->StringList) {
-        StringFree(&s);
-        return _LinkedListToString(value->StringList);
-    } else if (value->type == TYPE_OBJECT && value->Object) {
-        StringFree(&s);
-        return _JsonCreate(value->Object, indentLevel + 1);
-    } else {
-        StringAppendCStr(&s, "null");
+        if (i < listSize - 1) {
+            StringAppendChar(&s, ',');
+        }
+    }
+    StringAppendChar(&s, '\n');
+    APPEND_TABS(s, indentLevel - 1);
+    StringAppendChar(&s, ']');
+    return s;
+}
+
+static String _GetValueString(DictPair* pair, uint32_t indentLevel) {
+    String s = StringCreate(1);
+    switch (pair->valueType) {
+        case DATA_TYPE_STRING:
+            StringAppendChar(&s, '"');
+            StringAppendCStr(&s, pair->value);
+            StringAppendChar(&s, '"');
+            break;
+        case DATA_TYPE_NUMBER:
+            StringAppendFormat(&s, "%I64i", *(int64_t*)pair->value);
+            break;
+        case DATA_TYPE_FLOAT:
+            StringAppendFormat(&s, "%f", *(float*)pair->value);
+            break;
+        case DATA_TYPE_BOOL:
+            if (*(bool*)pair->value) {
+                StringAppendCStr(&s, "true");
+            } else {
+                StringAppendCStr(&s, "false");
+            }
+            break;
+        case DATA_TYPE_LIST:
+            StringFree(&s);
+            return _ListToString(pair->value, indentLevel + 1);
+        case DATA_TYPE_OBJECT:
+            StringFree(&s);
+            return _JsonCreate(pair->value, indentLevel + 1);
+        default:
+            StringAppendCStr(&s, "null");
+            break;
     }
     return s;
 }
@@ -120,31 +108,27 @@ static String _GetValueString(DictValue* value, uint32_t indentLevel) {
 String _JsonCreate(Dictionary* dict, uint32_t indentLevel) {
     String json = StringCreate(3);
     StringAppendCStr(&json, "{\n");
-    DictPair* pair = dict->first;
-    while (pair) {
-        for (uint32_t i = 0; i < indentLevel; i++) {
-            StringAppendCStr(&json, TAB);
-        }
+    uint64_t dictSize = ArrayGetSize(dict->data);
+    for (uint64_t i = 0; i < dictSize; i++) {
+        DictPair* pair = (DictPair*)dict->data[i];
+        APPEND_TABS(json, indentLevel);
         StringAppendChar(&json, '\"');
         StringAppendCStr(&json, pair->key);
         StringAppendChar(&json, '\"');
         StringAppendCStr(&json, ": ");
         if (pair->value) {
-            String valueString = _GetValueString(pair->value, indentLevel);
+            String valueString = _GetValueString(pair, indentLevel);
             StringAppend(&json, &valueString);
             StringFree(&valueString);
         } else {
             StringAppendCStr(&json, "null");
         }
-        if (pair->next) {
+        if (i < dictSize - 1) {
             StringAppendChar(&json, ',');
         }
         StringAppendChar(&json, '\n');
-        pair = pair->next;
     }
-    for (uint32_t i = 0; i < indentLevel - 1; i++) {
-        StringAppendCStr(&json, TAB);
-    }
+    APPEND_TABS(json, indentLevel - 1);
     StringAppendChar(&json, '}');
     return json;
 }
@@ -160,13 +144,10 @@ typedef enum {
     TOKEN_NULL,
     TOKEN_TRUE,
     TOKEN_FALSE,
-    TOKEN_KEY,
     TOKEN_STRING,
     TOKEN_NUMBER,
     TOKEN_FLOAT,
-    TOKEN_NUMBER_ARRAY,
-    TOKEN_FLOAT_ARRAY,
-    TOKEN_STRING_LIST,
+    TOKEN_LIST,
     TOKEN_OBJECT
 } _TokenTypes;
 
@@ -181,20 +162,39 @@ typedef struct {
     bool keyReaded;
     uint32_t errorCount;
     uint32_t level;
-    uint64_t lineNumber;
-    uint64_t columnNumber;
 } _JsonReadStatus;
 
 static inline void _RaiseJsonReadError(const char* message, _JsonReadStatus* status) {
-    DEBUG_LOG_ERROR("Json Reader : %s At index: %I64u, Line: %I64u, Column: %I64u",
-                    message, status->index, status->lineNumber, status->columnNumber);
+    DEBUG_LOG_ERROR("Json Reader : %s At index: %I64u",
+                    message, status->index);
     status->errorCount++;
 }
 
-static uint64_t _FindTokenEnd(_JsonReadStatus* status, uint64_t startFrom, char endChar) {
-    for (uint64_t i = startFrom; i < status->jsonText.length; i++) {
-        if (status->jsonText.c_str[i] == endChar) {
+static uint64_t _FindStringEnd(_JsonReadStatus* status, uint64_t start) {
+    char* str = status->jsonText.c_str;
+    for (uint64_t i = start; i < status->jsonText.length; i++) {
+        if (str[i] == '"') {
+            if (i > 0 && str[i - 1] == '\\') {
+                continue;
+            }
             return i;
+        }
+    }
+    return 0;
+}
+
+static uint64_t _FindEnd(_JsonReadStatus* status, uint64_t start, char begin, char end) {
+    char* str = status->jsonText.c_str;
+    uint32_t in = 0;
+    for (uint64_t i = start; i < status->jsonText.length; i++) {
+        if (str[i] == begin) {
+            in++;
+        }
+        if (str[i] == end) {
+            if (in == 0) {
+                return i;
+            }
+            in--;
         }
     }
     return 0;
@@ -216,16 +216,11 @@ static _TokenInformation _GetNextToken(_JsonReadStatus* status) {
     _TokenInformation tokenInfo;
     tokenInfo.token.c_str = NULL;
     tokenInfo.token.length = 0;
+    tokenInfo.tokenType = -1;
     uint64_t tokenEnd = 0;
     for (uint64_t i = status->index; i < status->jsonText.length; i++) {
         char c = status->jsonText.c_str[i];
-        if (c == ' ' || c == '\t') {  // WHITESPACE
-            status->columnNumber++;
-            continue;
-        } else if (c == '\n') {  // NEWLINE
-            status->lineNumber++;
-            status->columnNumber = 0;
-            continue;
+        if (0) {
         } else if (c == '{') {  // OBJECT
             if (status->level == 0) {
                 status->level++;
@@ -233,7 +228,7 @@ static _TokenInformation _GetNextToken(_JsonReadStatus* status) {
             }
             status->level++;
             tokenInfo.tokenType = TOKEN_OBJECT;
-            if ((tokenEnd = _FindTokenEnd(status, i, '}'))) {
+            if ((tokenEnd = _FindEnd(status, i + 1, '{', '}'))) {
                 tokenInfo.token = StringSubString(&status->jsonText, i, tokenEnd + 1);
                 status->index = tokenEnd + 1;
                 return tokenInfo;
@@ -241,21 +236,21 @@ static _TokenInformation _GetNextToken(_JsonReadStatus* status) {
                 _RaiseJsonReadError("Can't find end of the object.", status);
                 continue;
             }
-        } else if (c == '"') {
-            if (status->keyReaded) {  // STRING
-                tokenInfo.tokenType = TOKEN_STRING;
-            } else {  // KEY
-                tokenInfo.tokenType = TOKEN_KEY;
-            }
-            if ((tokenEnd = _FindTokenEnd(status, i + 1, '"'))) {
+        } else if (c == '[') {  // LIST
+            if ((tokenEnd = _FindEnd(status, i + 1, '[', ']'))) {
                 tokenInfo.token = StringSubString(&status->jsonText, i + 1, tokenEnd);
                 status->index = tokenEnd + 1;
-                /* if (tokenInfo.tokenType == TOKEN_KEY) { */
-                /*     ASSERT_BREAK_MSG(status->jsonText.c_str[status->index] == ':', */
-                /*                      "index: %I64u, char: %c, line: %I64u, col: %I64u", */
-                /*                      status->index, status->jsonText.c_str[status->index], */
-                /*                      status->lineNumber, status->columnNumber); */
-                /* } */
+                tokenInfo.tokenType = TOKEN_LIST;
+                return tokenInfo;
+            } else {
+                _RaiseJsonReadError("Can't find end of the array.", status);
+                continue;
+            }
+        } else if (c == '"') {  // STRING
+            tokenInfo.tokenType = TOKEN_STRING;
+            if ((tokenEnd = _FindStringEnd(status, i + 1))) {
+                tokenInfo.token = StringSubString(&status->jsonText, i + 1, tokenEnd);
+                status->index = tokenEnd + 1;
                 return tokenInfo;
             } else {
                 _RaiseJsonReadError("Can't find end of the string.", status);
@@ -263,47 +258,24 @@ static _TokenInformation _GetNextToken(_JsonReadStatus* status) {
             }
         } else if (c == ':') {  // END OF THE KEY
             status->keyReaded = true;
-            status->columnNumber++;
             continue;
         } else if (c == ',') {  // END OF THE VALUE
             status->keyReaded = false;
-            status->columnNumber++;
             continue;
         } else if (c == 'n') {  // NULL
             tokenInfo.tokenType = TOKEN_NULL;
-            status->index += 4;  // hardcoded
-            status->columnNumber += 4;
+            status->index += 4;
             return tokenInfo;
         } else if (c == 't') {  // TRUE
+            printf("bool, index: %I64u\n", i);
             tokenInfo.tokenType = TOKEN_TRUE;
-            status->index += 4;  // hardcoded
-            status->columnNumber += 4;
+            status->index += 4;
             return tokenInfo;
         } else if (c == 'f') {  // FALSE
             tokenInfo.tokenType = TOKEN_FALSE;
-            status->index += 5;  // hardcoded
-            status->columnNumber += 5;
+            status->index += 5;
             return tokenInfo;
-        } else if (c == '[') {  // ARRAY OR STRING LIST
-            if ((tokenEnd = _FindTokenEnd(status, i + 1, ']'))) {
-                tokenInfo.token = StringSubString(&status->jsonText, i + 1, tokenEnd);
-                status->index = tokenEnd + 1;
-                tokenInfo.tokenType = TOKEN_NUMBER_ARRAY;
-                for (uint64_t j = 0; j < tokenInfo.token.length; j++) {
-                    if (tokenInfo.token.c_str[j] == '"') {
-                        tokenInfo.tokenType = TOKEN_STRING_LIST;
-                        break;
-                    } else if (tokenInfo.token.c_str[j] == '.') {
-                        tokenInfo.tokenType = TOKEN_FLOAT_ARRAY;
-                        break;
-                    }
-                }
-                return tokenInfo;
-            } else {
-                _RaiseJsonReadError("Can't find end of the array.", status);
-                continue;
-            }
-        } else if (_IsNumber(c)) {
+        } else if (_IsNumber(c)) {  // NUMBER
             int end = i;
             int number;
             tokenInfo.tokenType = TOKEN_NUMBER;
@@ -321,132 +293,97 @@ static _TokenInformation _GetNextToken(_JsonReadStatus* status) {
     return tokenInfo;
 }
 
-static LinkedList* _CreateStringListFromToken(_TokenInformation info) {
-    LinkedList* list = LinkedListCreate();
-    uint64_t counter = 0;
-    uint64_t beginIndex;
-    for (uint64_t i = 0; i < info.token.length; i++) {
-        if (info.token.c_str[i] == '"') {
-            if (counter % 2 == 1) {
-                String tok = StringSubString(&info.token, beginIndex, i);
-                LinkedListPush(list, tok.c_str, tok.length + 1);
-                StringFree(&tok);
-            } else {
-                beginIndex = i + 1;
-            }
-            counter++;
+static List* _CreateListFromToken(_TokenInformation info, _JsonReadStatus* status) {
+    _JsonReadStatus listStatus;
+    memset(&listStatus, 0, sizeof(_JsonReadStatus));
+    listStatus.jsonText = info.token;
+    listStatus.level = status->level;
+    List* list = ListCreate();
+    _TokenInformation tokenInfo = _GetNextToken(&listStatus);
+    while (tokenInfo.tokenType != -1) {
+        if (0) {
+        } else if (tokenInfo.tokenType == TOKEN_NULL) {
+            ListPush(list, -1, NULL);
+        } else if (tokenInfo.tokenType == TOKEN_TRUE) {
+            ListPushBool(list, true);
+        } else if (tokenInfo.tokenType == TOKEN_FALSE) {
+            ListPushBool(list, false);
+        } else if (tokenInfo.tokenType == TOKEN_STRING) {
+            String s = StringCreate(2);
+            StringAppend(&s, &tokenInfo.token);
+            ListPush(list, DATA_TYPE_STRING, s.c_str);
+            StringFree(&s);
+            StringFree(&tokenInfo.token);
+        } else if (tokenInfo.tokenType == TOKEN_NUMBER) {
+            ListPushNumber(list, atoll(tokenInfo.token.c_str));
+            StringFree(&tokenInfo.token);
+        } else if (tokenInfo.tokenType == TOKEN_FLOAT) {
+            ListPushFloat(list, atof(tokenInfo.token.c_str));
+            StringFree(&tokenInfo.token);
+        } else if (tokenInfo.tokenType == TOKEN_LIST) {
+            List* l = _CreateListFromToken(tokenInfo, &listStatus);
+            ListPush(list, DATA_TYPE_LIST, l);
+            StringFree(&tokenInfo.token);
+        } else if (tokenInfo.tokenType == TOKEN_OBJECT) {
+            Dictionary* d = JsonParse(tokenInfo.token);
+            ListPush(list, DATA_TYPE_OBJECT, d);
+            StringFree(&tokenInfo.token);
         }
+        tokenInfo = _GetNextToken(&listStatus);
     }
     return list;
 }
 
-static int64_t* _CreateNumberArrayFromToken(_TokenInformation info) {
-    int64_t* array = ArrayCreate(int64_t);
-    for (uint64_t i = 0; i < info.token.length; i++) {
-        if (_IsNumber(info.token.c_str[i])) {
-            int end = i;
-            while (_IsNumber(info.token.c_str[end])) {
-                end++;
-            }
-            String tok = StringSubString(&info.token, i, end + 1);
-            int64_t num = atoll(tok.c_str);
-            ArrayPush(array, num);
-            StringFree(&tok);
-            i = end + 1;
-        }
-    }
-    return array;
-}
-
-static float* _CreateFloatArrayFromToken(_TokenInformation info) {
-    float* array = ArrayCreate(float);
-    for (uint64_t i = 0; i < info.token.length; i++) {
-        if (_IsNumber(info.token.c_str[i])) {
-            int end = i;
-            while (_IsNumber(info.token.c_str[end])) {
-                end++;
-            }
-            String tok = StringSubString(&info.token, i, end + 1);
-            float num = atof(tok.c_str);
-            ArrayPush(array, num);
-            StringFree(&tok);
-            i = end + 1;
-        }
-    }
-    return array;
-}
-
-static DictValue _GetNextValue(_JsonReadStatus* status) {
-    DictValue value;
-    memset(&value, 0, sizeof(DictValue));
+static DictPair* _GetNextValue(_JsonReadStatus* status) {
+    DictPair* pair = malloc(sizeof(DictPair));
+    memset(pair, 0, sizeof(DictPair));
+    pair->valueType = -1;
     _TokenInformation tokenInfo = _GetNextToken(status);
     switch (tokenInfo.tokenType) {
         case TOKEN_NULL:
-            return value;
+            return pair;
         case TOKEN_TRUE:
-            value.type = TYPE_BOOL;
-            value.Boolean = malloc(sizeof(bool));
-            *value.Boolean = true;
-            return value;
+            pair->valueType = DATA_TYPE_BOOL;
+            pair->value = malloc(sizeof(bool));
+            *(bool*)(pair->value) = true;
+            return pair;
         case TOKEN_FALSE:
-            value.type = TYPE_BOOL;
-            value.Boolean = malloc(sizeof(bool));
-            *value.Boolean = false;
-            return value;
-        case TOKEN_KEY:
-            _RaiseJsonReadError("No colon after the key.", status);
-            StringFree(&tokenInfo.token);
-            return value;
+            pair->valueType = DATA_TYPE_BOOL;
+            pair->value = malloc(sizeof(bool));
+            *(bool*)(pair->value) = false;
+            return pair;
         case TOKEN_STRING:
-            value.type = TYPE_STRING;
-            value.CString = malloc(tokenInfo.token.length + 1);
-            memcpy(value.CString, tokenInfo.token.c_str, tokenInfo.token.length + 1);
+            pair->valueType = DATA_TYPE_STRING;
+            pair->value = malloc(tokenInfo.token.length + 1);
+            memcpy(pair->value, tokenInfo.token.c_str, tokenInfo.token.length + 1);
             StringFree(&tokenInfo.token);
-            return value;
+            return pair;
         case TOKEN_NUMBER:
-            value.type = TYPE_NUMBER;
+            pair->valueType = DATA_TYPE_NUMBER;
             int64_t num = atoll(tokenInfo.token.c_str);
-            value.Number = malloc(sizeof(int64_t));
-            *value.Number = num;
+            pair->value = malloc(sizeof(int64_t));
+            *(int64_t*)pair->value = num;
             StringFree(&tokenInfo.token);
-            return value;
+            return pair;
         case TOKEN_FLOAT:
-            value.type = TYPE_FLOAT;
+            pair->valueType = DATA_TYPE_FLOAT;
             float f = atof(tokenInfo.token.c_str);
-            value.Float = malloc(sizeof(float));
-            *value.Float = f;
+            pair->value = malloc(sizeof(float));
+            *(float*)pair->value = f;
             StringFree(&tokenInfo.token);
-            return value;
+            return pair;
         case TOKEN_OBJECT:
-            value.type = TYPE_OBJECT;
-            value.Object = JsonParse(tokenInfo.token);
+            pair->valueType = DATA_TYPE_OBJECT;
+            pair->value = JsonParse(tokenInfo.token);
             StringFree(&tokenInfo.token);
-            return value;
-        case TOKEN_STRING_LIST:
-            value.type = TYPE_STRING_LIST;
-            value.StringList = _CreateStringListFromToken(tokenInfo);
+            return pair;
+        case TOKEN_LIST:
+            pair->valueType = DATA_TYPE_LIST;
+            pair->value = _CreateListFromToken(tokenInfo, status);
             StringFree(&tokenInfo.token);
-            return value;
-        case TOKEN_NUMBER_ARRAY:
-            value.type = TYPE_NUMBER_ARRAY;
-            value.Array = _CreateNumberArrayFromToken(tokenInfo);
-            StringFree(&tokenInfo.token);
-            return value;
-        case TOKEN_FLOAT_ARRAY:
-            value.type = TYPE_FLOAT_ARRAY;
-            value.Array = _CreateFloatArrayFromToken(tokenInfo);
-            StringFree(&tokenInfo.token);
-            return value;
+            return pair;
     }
-}
-
-static String _GetNextKey(_JsonReadStatus* status) {
-    _TokenInformation info = _GetNextToken(status);
-    if (status->keyReaded || info.tokenType != TOKEN_KEY) {
-        /* _RaiseJsonReadError("Comma not founded after value.", status); */
-        /* status->keyReaded = false; */
-    }
-    return info.token;
+    return pair;
 }
 
 Dictionary* JsonParse(String jsonString) {
@@ -456,11 +393,20 @@ Dictionary* JsonParse(String jsonString) {
     memset(&status, 0, sizeof(_JsonReadStatus));
     status.jsonText = jsonString;
     while (true) {
-        String key = _GetNextKey(&status);
-        if (key.c_str) {
-            DictValue value = _GetNextValue(&status);
-            DictionarySet(dict, key.c_str, &value);
-            StringFree(&key);
+        _TokenInformation keyInfo = _GetNextToken(&status);
+        if (keyInfo.tokenType != TOKEN_STRING) {
+            _RaiseJsonReadError("Can't find key!", &status);
+            if (keyInfo.token.c_str) {
+                StringFree(&keyInfo.token);
+            }
+            break;
+        }
+        if (keyInfo.token.c_str) {
+            DictPair* pair = _GetNextValue(&status);
+            pair->key = malloc(keyInfo.token.length + 1);
+            memcpy(pair->key, keyInfo.token.c_str, keyInfo.token.length + 1);
+            DictionarySetPair(dict, pair);
+            StringFree(&keyInfo.token);
         } else {
             break;
         }

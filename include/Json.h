@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Dictionary.h"
 #include "StringUtils.h"
+#include "containers/Dictionary.h"
 
 /* Creates a json text from given dictionary. */
 String JsonCreate(Dictionary* dict);

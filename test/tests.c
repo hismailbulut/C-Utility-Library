@@ -1,20 +1,23 @@
-#include "test_containers.h"
+#include "tests.h"
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "Array.h"
 #include "Debug.h"
-#include "Dictionary.h"
+#include "Defines.h"
 #include "FileUtils.h"
 #include "Json.h"
-#include "LinkedList.h"
-#include "Map.h"
 #include "StringUtils.h"
+#include "containers/Array.h"
+#include "containers/Dictionary.h"
+#include "containers/LinkedList.h"
+#include "containers/List.h"
+#include "containers/Map.h"
 
 char* test_string =
-    "üğşiçö Venenatis mauris. Curabitur ornare mollis .çöşiğüßDæ~´´:::;;;/*-+\n"
+    "Venenatis mauris. Curabitur ornare mollis\n"
     "velit. Sed vitae metus. Morbi posuere mi id odio. Donec elit sem,\n"
     "tempor at, pharetra eu, sodales sit amet, elit.\n"
     "Curabitur urna tellus, aliquam vitae, ultrices eget, vehicula nec, diam.\n"
@@ -23,7 +26,10 @@ char* test_string =
     "Fusce adipiscing commodo erat. In eu justo. Nulla dictum, erat sed blandit\n"
     "venenatis, arcu dolor molestie dolor, vitae congue orci risus a nulla.\n"
     "Pellentesque sit amet arcu. In mattis laoreet enim. Pellentesque id augue et\n"
-    "arcu blandit tincidunt. Pellentesque elit ante, rhoncus quis.";
+    "arcu blandit tincidunt. Pellentesque elit ante, rhoncus quis.\n"
+    "0123456789 !'^+%&/()=?_>£#$½6{[]}@/*-|_ üğışçö ÜĞİŞÇÖ æß´~¨\n";
+
+char* test_string_2 = ":1;2:3;4:,;5:6;9898;i:,jkl:,asd:,asdasd,";
 
 int64_t test_int_array[] = {5, -7, 98, 165, 789, -1, 0, 456, -123, 987};
 float test_float_array[] = {5.45, 7.789, -98.145, 165.002, -789.9, 1.0, 0.5, 456.3, -123.7, 987.0};
@@ -31,7 +37,31 @@ float test_float_array[] = {5.45, 7.789, -98.145, 165.002, -789.9, 1.0, 0.5, 456
 void array_push_and_pop_time() {
 }
 
-void simple_test_String() {
+void test_strings() {
+    TEST_START;
+    // encode & decode
+    String s = StringCreateCStr(test_string);
+    StringEncode(&s, "my powerfull encoding function");
+    StringDecode(&s, "my powerfull encoding function");
+    TEST_CHECK(strcmp(s.c_str, test_string) == 0);
+    StringFree(&s);
+    // tokenize
+    s = StringCreateCStr(test_string_2);
+    List* tokenized = StringTokenize(&s, ":;,");
+    TEST_CHECK(ListGetSize(tokenized) == 11);
+    TEST_CHECK(strcmp((ListGetValue(tokenized, 0)->value), "1") == 0);
+    TEST_CHECK(strcmp((ListGetValue(tokenized, 6)->value), "9898") == 0);
+    TEST_CHECK(strcmp((ListGetValue(tokenized, 10)->value), "asdasd") == 0);
+    ListFree(tokenized);
+    StringFree(&s);
+    // replace
+    s = StringCreateCStr("Leo sapien and pretium elit, a faucibus and sapien dolor vel pede. Sapien and Vestibulum.");
+    StringReplace(&s, "and", "ve", true);
+    TEST_CHECK(
+        strcmp(s.c_str,
+               "Leo sapien ve pretium elit, a faucibus ve sapien dolor vel pede. Sapien ve Vestibulum.") == 0);
+    StringFree(&s);
+    TEST_END;
 }
 
 void simple_test_LinkedList() {
@@ -85,11 +115,11 @@ void create_dictionary_and_json() {  // Create dictionary.
     DictionarySetNumber(dict, "numberkey", -1071);
     DictionarySetFloat(dict, "floatkey", 3.14);
     DictionarySetBool(dict, "boolkey", false);
-    DictionarySet(dict, "nullkey", NULL);
+    DictionarySet(dict, "nullkey", -1, NULL);
 
     // Reassign a key.
     DictionarySetFloat(dict, "nullkey", 123.456789);
-    DictionarySet(dict, "new null key", NULL);
+    DictionarySet(dict, "new null key", -1, NULL);
 
     // Create another dictionaries.
     Dictionary* inner = DictionaryCreate();
@@ -104,58 +134,60 @@ void create_dictionary_and_json() {  // Create dictionary.
     DictionarySetNumber(moreinner, "number", 123456789);
 
     // Add them to dictionaries.
-    DictionarySetObject(dict, "inner object", inner);
-    DictionarySetObject(inner, "more inner", moreinner);
+    DictionarySet(dict, "inner object", DATA_TYPE_OBJECT, inner);
+    DictionarySet(inner, "more inner", DATA_TYPE_OBJECT, moreinner);
 
-    // Create arrays.
-    int64_t* numberArray = ArrayCreate(int64_t);
-    float* floatArray = ArrayCreate(float);
-    ArrayInsert(numberArray, test_int_array, sizeof(test_int_array) / sizeof(int64_t));
-    ArrayInsert(floatArray, test_float_array, sizeof(test_float_array) / sizeof(float));
+    // Create a list.
+    List* list = ListCreate();
+    ListPushNumber(list, 65465);
+    ListPushFloat(list, 546.789);
+    ListPushBool(list, true);
 
-    // Add arrays to root dictionary.
-    DictionarySetNumberArray(dict, "number array", numberArray);
-    DictionarySetFloatArray(inner, "float array", floatArray);
+    // ListPush(list, DATA_TYPE_LIST, list); // don't do this
 
-    // Free the arrays. Dictionary has it own.
-    ArrayFree(numberArray);
-    ArrayFree(floatArray);
+    List* innerList = ListCreate();
+    ListPush(innerList, DATA_TYPE_STRING, "string 1");
+    ListPush(innerList, DATA_TYPE_STRING, "string 2");
+    ListPush(innerList, DATA_TYPE_STRING, "string 3");
+    ListPushNumber(innerList, 65465);
 
-    // Create a string list. (LinkedList)
-    LinkedList* list = LinkedListCreate();
-    LinkedListPush(list, "This", 5);
-    LinkedListPush(list, "is", 2);
-    LinkedListPush(list, "a", 2);
-    LinkedListPush(list, "string", 6);
-    LinkedListPush(list, "list.", 5);
+    ListPush(list, DATA_TYPE_LIST, innerList);
 
-    // Add string list to the root dictionary.
-    DictionarySetStringList(dict, "string list", list);
+    // Add dictionary to list.
+    ListPush(list, DATA_TYPE_OBJECT, moreinner);
 
-    // Free the list. Dictionary has its own copy.
-    LinkedListFree(list);
+    // Add list to dictionary.
+    DictionarySet(dict, "mylist", DATA_TYPE_LIST, list);
 
     // Get json string.
     String json = JsonCreate(dict);
 
     // Write json file.
-    FileUtilsWriteString("jsontest.json", json);
+    /* FileUtilsWriteString("test.json", json); */
+    printf("JSON:\n%s\n", json.c_str);
+    FileUtilsWriteString("test.json", json);
+
+    // Free json string.
     StringFree(&json);
 
-    // Don't free the inner dictionaries. The parent dictionary owns it and will frees.
+    // Don't free the inner dictionaries and lists. The parent dictionary owns it and will frees.
     DictionaryFree(dict);
 }
 
 void read_json_file_and_parse() {
+    TEST_START;
     String json;
-    if (FileUtilsReadString("jsontest.json", &json)) {
+    if (FileUtilsReadString("test.json", &json)) {
         Dictionary* dict = JsonParse(json);
         String reparsedJson = JsonCreate(dict);
-        printf("REPARSED JSON:\n%s\n", reparsedJson.c_str);
+
+        FileUtilsWriteString("reparsed.json", reparsedJson);
+
         DictionaryFree(dict);
         StringFree(&reparsedJson);
         StringFree(&json);
     } else {
-        printf("File read error.\n");
+        DEBUG_LOG_ERROR("Error.");
     }
+    TEST_END;
 }

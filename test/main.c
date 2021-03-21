@@ -1,11 +1,8 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "test_containers.h"
+#include "tests.h"
 
 int main(void) {
     /* array_push_and_pop_time(); */
-    /* simple_test_String(); */
+    /* test_strings(); */
     /* simple_test_LinkedList(); */
     /* simple_test_Map(); */
     /* simple_test_Files(); */
