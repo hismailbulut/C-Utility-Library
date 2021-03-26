@@ -16,19 +16,19 @@ typedef enum header_fields {
     TOTAL = 3
 } header_fields;
 
-static inline uint64_t *_Header(void *array) {
+static inline uint64_t *_Header(const void *array) {
     return (uint64_t *)array - TOTAL;
 }
 
-static inline uint64_t _FieldGet(void *array, header_fields field) {
+static inline uint64_t _FieldGet(const void *array, header_fields field) {
     return _Header(array)[field];
 }
 
-static inline void _FieldSet(void *array, header_fields field, uint64_t val) {
+static inline void _FieldSet(const void *array, header_fields field, uint64_t val) {
     _Header(array)[field] = val;
 }
 
-static inline void _RaiseIndexOutOfBounds(void *array, uint64_t index) {
+static inline void _RaiseIndexOutOfBounds(const void *array, uint64_t index) {
     DEBUG_LOG_ERROR("Index out of bounds. Index: %I64u, Array Size: %I64u.",
                     index, ArrayGetSize(array));
 }
@@ -166,18 +166,18 @@ void *_ArrayRemove(void *array, uint64_t startIndex, uint64_t length) {
     return array;
 }
 
-void *ArrayGetElementPtr(void *array, uint64_t index) {
+void *ArrayGetElementPtr(const void *array, uint64_t index) {
     return (char *)array + index * ArrayGetStride(array);
 }
 
-uint64_t ArrayGetCapacity(void *array) {
+uint64_t ArrayGetCapacity(const void *array) {
     return _FieldGet(array, CAPACITY);
 }
 
-uint64_t ArrayGetSize(void *array) {
+uint64_t ArrayGetSize(const void *array) {
     return _FieldGet(array, SIZE);
 }
 
-uint64_t ArrayGetStride(void *array) {
+uint64_t ArrayGetStride(const void *array) {
     return _FieldGet(array, STRIDE);
 }

@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "Defines.h"
+#include "MemoryUtils.h"
 #include "StringUtils.h"
 #include "containers/Dictionary.h"
 #include "containers/LinkedList.h"

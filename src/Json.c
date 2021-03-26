@@ -7,7 +7,7 @@
 #include <string.h>
 
 #include "Debug.h"
-#include "Defines.h"
+#include "MemoryUtils.h"
 #include "StringUtils.h"
 #include "containers/Array.h"
 #include "containers/Dictionary.h"

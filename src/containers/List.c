@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Defines.h"
+#include "MemoryUtils.h"
 #include "containers/Array.h"
 #include "containers/Dictionary.h"
 

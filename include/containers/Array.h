@@ -52,10 +52,10 @@ void* _ArrayRemove(void* array, uint64_t startIndex, uint64_t length);
 #define ArrayRemove(array, startIndex, length) \
     array = _ArrayRemove(array, startIndex, length)
 
-void* ArrayGetElementPtr(void* array, uint64_t index);
+void* ArrayGetElementPtr(const void* array, uint64_t index);
 
-uint64_t ArrayGetCapacity(void* array);
+uint64_t ArrayGetCapacity(const void* array);
 
-uint64_t ArrayGetSize(void* array);
+uint64_t ArrayGetSize(const void* array);
 
-uint64_t ArrayGetStride(void* array);
+uint64_t ArrayGetStride(const void* array);

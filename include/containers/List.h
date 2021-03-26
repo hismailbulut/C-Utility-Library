@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "Defines.h"
+#include "MemoryUtils.h"
 #include "containers/List.h"
 
 typedef struct ListNode {

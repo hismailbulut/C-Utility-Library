@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "Debug.h"
-#include "Defines.h"
+#include "MemoryUtils.h"
 #include "containers/Array.h"
 #include "containers/List.h"
 

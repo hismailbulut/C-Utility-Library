@@ -4,17 +4,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "Debug.h"
-#include "Defines.h"
 #include "FileUtils.h"
 #include "Json.h"
+#include "MemoryUtils.h"
 #include "StringUtils.h"
 #include "containers/Array.h"
 #include "containers/Dictionary.h"
 #include "containers/LinkedList.h"
 #include "containers/List.h"
 #include "containers/Map.h"
+#include "containers/UniqueArray.h"
 
 char* test_string =
     "Venenatis mauris. Curabitur ornare mollis\n"
@@ -34,7 +36,22 @@ char* test_string_2 = ":1;2:3;4:,;5:6;9898;i:,jkl:,asd:,asdasd,";
 int64_t test_int_array[] = {5, -7, 98, 165, 789, -1, 0, 456, -123, 987};
 float test_float_array[] = {5.45, 7.789, -98.145, 165.002, -789.9, 1.0, 0.5, 456.3, -123.7, 987.0};
 
-void array_push_and_pop_time() {
+void test_array() {
+    TEST_START;
+    uint64_t test_size = 100000;
+    float* array = ArrayCreate(float);
+
+    srand(time(0));
+    for (uint64_t i = 0; i < test_size; i++) {
+        float negative = rand() % 2 == 0 ? 1 : -1;
+        float val = (rand() * rand() * 0.0001 * negative) + 1;
+        uint64_t size = ArrayGetSize(array);
+        size = size == 0 ? 1 : size;
+        uint64_t index = rand() % size;
+        ArrayPushAt(array, val, index);
+        TEST_CHECK(array[index] == val);
+    }
+    TEST_END;
 }
 
 void test_strings() {
@@ -170,7 +187,7 @@ void create_dictionary_and_json() {  // Create dictionary.
     // Free json string.
     StringFree(&json);
 
-    // Don't free the inner dictionaries and lists. The parent dictionary owns it and will frees.
+    // Don't free the inner dictionaries and lists. The parent dictionary will delete them.
     DictionaryFree(dict);
 }
 
@@ -188,6 +205,52 @@ void read_json_file_and_parse() {
         StringFree(&json);
     } else {
         DEBUG_LOG_ERROR("Error.");
+    }
+    TEST_END;
+}
+
+void print_float_unique_array(UniqueArray* array) {
+    printf("Arr: ");
+    for (uint64_t i = 0; i < ArrayGetSize(array->data); i++) {
+        printf("%f ", *(float*)UniqueArrayValueAt(array, i));
+    }
+    printf("\n");
+}
+
+int test_unique_array_float_comparator(const void* v1, const void* v2) {
+    float myval1 = *(float*)v1;
+    float myval2 = *(float*)v2;
+    if (myval1 > myval2) {
+        return 1;
+    } else if (myval1 < myval2) {
+        return -1;
+    }
+    return 0;
+}
+
+void test_unique_array() {
+    TEST_START;
+    uint64_t test_size = 100000;
+    UniqueArray* array = UniqueArrayCreate(sizeof(float), test_size,
+                                           test_unique_array_float_comparator);
+
+    srand(time(0));
+    for (uint64_t i = 0; i < test_size; i++) {
+        float negative = rand() % 2 == 0 ? 1 : -1;
+        float val = (rand() * rand() * 0.0001 * negative) + 1;
+        // printf("%f\n", val);
+        if (UniqueArrayAdd(array, &val)) {
+            TEST_CHECK(UniqueArrayContains(array, &val));
+        }
+    }
+    for (uint64_t i = 1; i < ArrayGetSize(array->data); i++) {
+        TEST_CHECK(*(float*)UniqueArrayValueAt(array, i - 1) <
+                   *(float*)UniqueArrayValueAt(array, i));
+        // float fb = *(float*)UniqueArrayValueAt(array, i - 1);
+        // float fc = *(float*)UniqueArrayValueAt(array, i);
+        // if (fb >= fc) {
+        // printf("Index: %I64u, fb: %f, fc: %f\n", i, fb, fc);
+        // }
     }
     TEST_END;
 }

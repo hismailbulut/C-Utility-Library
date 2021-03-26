@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "Commons.h"
 #include "Debug.h"
+#include "MemoryUtils.h"
 #include "containers/LinkedList.h"
 
 // PRIVATE BEGIN
@@ -22,7 +22,7 @@ static uint64_t _FindKeyIndex(MapHeader* header, const void* key,
             continue;
         }
         char* listKey = LinkedListGetElementValue(header->keys, i);
-        if (MemEquals(key, listKey, keySize)) {
+        if (MemoryEquals(key, listKey, keySize)) {
             return i;
         }
     }
@@ -37,7 +37,7 @@ static uint64_t _FindValueIndex(MapHeader* header, const void* value,
             continue;
         }
         char* listValue = LinkedListGetElementValue(header->values, i);
-        if (MemEquals(value, listValue, valueSize)) {
+        if (MemoryEquals(value, listValue, valueSize)) {
             return i;
         }
     }

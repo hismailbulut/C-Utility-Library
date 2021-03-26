@@ -1,7 +1,5 @@
 #pragma once
 
-#include "containers/Map.h"
-
 #define TEST_START bool _test_status_ = true
 
 #define TEST_CHECK(cond) \
@@ -16,17 +14,18 @@
         }                                                   \
     }
 
-void array_push_and_pop_time();
+void test_array();
 
 void test_strings();
 
 void simple_test_LinkedList();
 
-void print_map(Map* map);
-void set_map_key(Map* map, const char* name, uint32_t age);
 void simple_test_Map();
 
 void simple_test_Files();
 
 void create_dictionary_and_json();
+
 void read_json_file_and_parse();
+
+void test_unique_array();
