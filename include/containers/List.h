@@ -13,19 +13,23 @@ typedef struct ListNode {
 
 typedef struct List {
     uint64_t* data;
+    MemoryTracker memTracker;
 } List;
 
 /* Creates and empty list. */
 List* ListCreate();
 
+List* ListCopy(List* list);
+
 /* Deletes list */
 void ListFree(List* list);
 
-/* Only free popped nodes. Set, get and push functions does not copy the node. */
-void ListFreeNode(ListNode* node);
+/* Only free popped nodes. Get function does not copy the node. */
+void ListFreeNode(List* list, ListNode* node);
 
 void ListSetValue(List* list, uint64_t index, CUtilsDataType type, void* value);
 
+/* Returns a pointer to value at index. Don't free. */
 ListNode* ListGetValue(List* list, uint64_t index);
 
 void ListPush(List* list, CUtilsDataType type, void* value);

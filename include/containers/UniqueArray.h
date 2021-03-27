@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "containers/UniqueArray.h"
+
 typedef struct UniqueArray {
     /* Data is the array contains the values. You can access elements with
      * casting it to your type. */
@@ -57,5 +59,11 @@ bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value);
 /* Returns true if given value is in the UniqueArray. False otherwise. */
 bool UniqueArrayContains(UniqueArray* uniqueArray, void* value);
 
+/* Returns index if value founds. Otherwise returns the size of the 
+ * array. */
+uint64_t UniqueArrayIndexOf(UniqueArray* uniqueArray, void* value);
+
 /* Returns pointer to specified value at index. Cast to your type. */
 void* UniqueArrayValueAt(UniqueArray* uniqueArray, uint64_t index);
+
+uint64_t UniqueArrayGetSize(UniqueArray* uniqueArray);

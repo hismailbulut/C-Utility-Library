@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "containers/UniqueArray.h"
+
 // COMMONS
 
 typedef enum CUtilsDataType {
@@ -20,14 +22,16 @@ bool MemoryEquals(const void* buf1, const void* buf2, size_t size);
 /* Swaps two given memory blocks. */
 void MemorySwap(void* buf1, void* buf2, size_t size);
 
-// MEMORY ALLOCATIONS
+// MEMORY TRACKER
 
-typedef struct CUtilsMemory {
-    uint64_t* pointers;
-} CUtilsMemory;
+typedef UniqueArray* MemoryTracker;
 
-void* CUtilsMalloc(size_t size);
+MemoryTracker MemoryTrackerInit();
 
-void* CUtilsRealloc(void* buf, size_t newSize);
+void* CUtilsMalloc(size_t size, MemoryTracker memTracker);
 
-void CUtilsFree(void* buf);
+void* CUtilsRealloc(void* buf, size_t newSize, MemoryTracker memTracker);
+
+void CUtilsFree(void* buf, MemoryTracker memTracker);
+
+void MemoryTrackerClose(MemoryTracker memTracker);

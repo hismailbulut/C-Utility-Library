@@ -154,6 +154,9 @@ void create_dictionary_and_json() {  // Create dictionary.
     DictionarySet(dict, "inner object", DATA_TYPE_OBJECT, inner);
     DictionarySet(inner, "more inner", DATA_TYPE_OBJECT, moreinner);
 
+    // Free dictionaries. Root dictionary has its own copy.
+    DictionaryFree(inner);
+
     // Create a list.
     List* list = ListCreate();
     ListPushNumber(list, 65465);
@@ -170,8 +173,14 @@ void create_dictionary_and_json() {  // Create dictionary.
 
     ListPush(list, DATA_TYPE_LIST, innerList);
 
+    // Free list. Root list has its own copy.
+    ListFree(innerList);
+
     // Add dictionary to list.
     ListPush(list, DATA_TYPE_OBJECT, moreinner);
+
+    // Free dictionary. List has its own copy.
+    DictionaryFree(moreinner);
 
     // Add list to dictionary.
     DictionarySet(dict, "mylist", DATA_TYPE_LIST, list);

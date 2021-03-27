@@ -7,6 +7,7 @@
 #include "StringUtils.h"
 #include "containers/Dictionary.h"
 #include "containers/LinkedList.h"
+#include "containers/UniqueArray.h"
 
 typedef struct DictPair {
     char* key;
@@ -16,15 +17,18 @@ typedef struct DictPair {
 
 typedef struct Dictionary {
     uint64_t* data;
+    MemoryTracker memTracker;
 } Dictionary;
 
 /* Creates an empty dictionary. */
 Dictionary* DictionaryCreate();
 
+Dictionary* DictionaryCopy(Dictionary* dict);
+
 /* Frees all copied values and pointed objects. */
 void DictionaryFree(Dictionary* dict);
 
-void DictionaryFreePair(DictPair* pair);
+void DictionaryFreePair(Dictionary* dict, DictPair* pair);
 
 /* Adds pair to dictionary. You can create values with DictionaryCreateValue. */
 void DictionarySet(Dictionary* dict, char* key, CUtilsDataType valueType, void* value);

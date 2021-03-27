@@ -14,7 +14,7 @@ int main(void) {
     // simple_test_Map();
     // simple_test_Files();
     // create_dictionary_and_json();
-    // read_json_file_and_parse();
-    test_unique_array();
+    read_json_file_and_parse();
+    // test_unique_array();
     return 0;
 }
