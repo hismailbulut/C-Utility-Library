@@ -15,7 +15,6 @@
 #include "containers/Dictionary.h"
 #include "containers/LinkedList.h"
 #include "containers/List.h"
-#include "containers/Map.h"
 #include "containers/UniqueArray.h"
 
 char* test_string =
@@ -81,50 +80,48 @@ void test_strings() {
     TEST_END;
 }
 
-void simple_test_LinkedList() {
-}
+// void print_linkedlist(LinkedList* list) {
+//     printf("LinkedList: ");
+//     for (uint64_t i = 0; i < list->size; i++) {
+//         printf("%I64u ", *(uint64_t*)LinkedListGetValue(list, i));
+//     }
+//     printf("\n");
+// }
 
-// MAP.H BEGIN
-void print_map(Map* map) {
-    printf("------------------------------\n");
-    printf("Map Size = %I64u\n", MapGetSize(map));
-    for (uint64_t i = 0; i < MapGetSize(map); i++) {
-        char* key = MapGetKeyAt(map, i);
-        ASSERT_BREAK(key);
-        uint32_t* value = MapFindValue(map, key, strlen(key) + 1);
-        ASSERT_BREAK(value);
-        printf("\tKey: %s\tValue: %u\n", key, *value);
-    }
-    printf("------------------------------\n");
-}
-void set_map_key(Map* map, const char* name, uint32_t age) {
-    MapSet(map, name, strlen(name) + 1, &age, sizeof(age));
-}
-void simple_test_Map() {
+void test_linkedlist() {
     TEST_START;
-    Map* animals = MapCreate();
-    set_map_key(animals, "Dog", 20);
-    set_map_key(animals, "Cat", 18);
-    set_map_key(animals, "Elephant", 13);
-    TEST_CHECK(*(uint32_t*)MapFindValue(animals, "Elephant", 9) == 13);
-    set_map_key(animals, "Monkey", 50);
-    TEST_CHECK(*(uint32_t*)MapFindValue(animals, "Monkey", 7) == 50);
-    MapChangeKey(animals, "Dog", 4, "Lion", 5);
-    TEST_CHECK(*(uint32_t*)MapFindValue(animals, "Lion", 5) == 20);
-    int v = 18;
-    char* cat_key = MapFindKey(animals, &v, sizeof(v));
-    TEST_CHECK(strcmp(cat_key, "Cat") == 0);
-    set_map_key(animals, "Monkey", 1071);
-    TEST_CHECK(*(uint32_t*)MapFindValue(animals, "Monkey", 7) == 1071);
-    MapFree(animals);
+    LinkedList* list = LinkedListCreate(sizeof(uint64_t));
+    LinkedListPushRV(list, uint64_t, 0);
+    LinkedListPushRV(list, uint64_t, 1);
+    LinkedListPushRV(list, uint64_t, 2);
+    LinkedListPushRV(list, uint64_t, 3);
+    LinkedListPushRV(list, uint64_t, 4);
+    LinkedListPushRV(list, uint64_t, 5);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 2) == 2);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 5) == 5);
+    LinkedListPushAtRV(list, uint64_t, 10, 0);
+    LinkedListPushAtRV(list, uint64_t, 12, 2);
+    LinkedListPushAtRV(list, uint64_t, 14, 4);
+    LinkedListPushAtRV(list, uint64_t, 16, 6);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 0) == 10);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 2) == 12);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 6) == 16);
+    LinkedListPopAt(list, 6);
+    LinkedListPopAt(list, 4);
+    LinkedListPopAt(list, 2);
+    LinkedListPopAt(list, 0);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 0) == 0);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 2) == 2);
+    LinkedListPop(list);
+    LinkedListPop(list);
+    LinkedListPop(list);
+    TEST_CHECK(list->size == 3);
+    LinkedListFree(list);
     TEST_END;
 }
-// MAP.H END
 
-void simple_test_Files() {
-}
-
-void create_dictionary_and_json() {  // Create dictionary.
+void test_dictionary_and_json() {  // Create dictionary.
+    TEST_START;
     Dictionary* dict = DictionaryCreate();
 
     // Add some keys.
@@ -188,43 +185,36 @@ void create_dictionary_and_json() {  // Create dictionary.
     // Get json string.
     String json = JsonCreate(dict);
 
-    // Write json file.
-    /* FileUtilsWriteString("test.json", json); */
-    printf("JSON:\n%s\n", json.c_str);
-    FileUtilsWriteString("test.json", json);
+    // Reparse json string.
+    Dictionary* repDict = JsonParse(json);
+
+    // Recreate json string from reparsed dictionary.
+    String reparsedJson = JsonCreate(repDict);
+    DictionaryFree(repDict);
+
+    // Trim whitespaces.
+    StringTrim(&json, " \n");
+    StringTrim(&reparsedJson, " \n");
+
+    TEST_CHECK(StringEquals(&json, &reparsedJson));
 
     // Free json string.
     StringFree(&json);
+    StringFree(&reparsedJson);
 
     // Don't free the inner dictionaries and lists. The parent dictionary will delete them.
     DictionaryFree(dict);
-}
 
-void read_json_file_and_parse() {
-    TEST_START;
-    String json;
-    if (FileUtilsReadString("test.json", &json)) {
-        Dictionary* dict = JsonParse(json);
-        String reparsedJson = JsonCreate(dict);
-
-        FileUtilsWriteString("reparsed.json", reparsedJson);
-
-        DictionaryFree(dict);
-        StringFree(&reparsedJson);
-        StringFree(&json);
-    } else {
-        DEBUG_LOG_ERROR("Error.");
-    }
     TEST_END;
 }
 
-void print_float_unique_array(UniqueArray* array) {
-    printf("Arr: ");
-    for (uint64_t i = 0; i < ArrayGetSize(array->data); i++) {
-        printf("%f ", *(float*)UniqueArrayValueAt(array, i));
-    }
-    printf("\n");
-}
+// void print_float_unique_array(UniqueArray* array) {
+//     printf("Arr: ");
+//     for (uint64_t i = 0; i < ArrayGetSize(array->data); i++) {
+//         printf("%f ", *(float*)UniqueArrayValueAt(array, i));
+//     }
+//     printf("\n");
+// }
 
 int test_unique_array_float_comparator(const void* v1, const void* v2) {
     float myval1 = *(float*)v1;

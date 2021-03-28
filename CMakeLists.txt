@@ -6,7 +6,7 @@ set(C_UTILS_LIBRARY_SOURCE_FILES
     "src/containers/UniqueArray.c"
     "src/containers/List.c"
     "src/containers/LinkedList.c"
-    "src/containers/Map.c"
+    "src/containers/HashMap.c"
     "src/containers/Dictionary.c"
     "src/StringUtils.c"
     "src/MemoryUtils.c"

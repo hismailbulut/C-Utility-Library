@@ -7,138 +7,103 @@
 #include <stdlib.h>
 
 #include "Debug.h"
+#include "MemoryUtils.h"
 
 // PRIVATE BEGIN
-typedef struct LinkedListNode {
-    void* value;
-    size_t valueSize;
-    struct LinkedListNode* next;
-} LinkedListNode;
 
-typedef struct LinkedListHeader {
-    uint64_t length;
-    LinkedListNode* first;
-    LinkedListNode* last;
-} LinkedListHeader;
-
-static inline LinkedListNode* _NewEmptyNode() {
-    LinkedListNode* node = malloc(sizeof(LinkedListNode));
-    memset(node, 0, sizeof(LinkedListNode));
-    return node;
+static inline LinkedListNode* _NewEmptyNode(LinkedList* list) {
+    return CUtilsMalloc(sizeof(LinkedListNode), list->memTracker);
 }
 
-static void _SetNodeValue(LinkedListNode* node,
-                          const void* value, size_t v_size) {
+static void _SetNodeValue(LinkedList* list, LinkedListNode* node,
+                          const void* value) {
     if (node->value == NULL) {
-        node->value = malloc(v_size);
-    } else if (node->valueSize != v_size) {
-        void* temp = realloc(node->value, v_size);
-        if (temp) {
-            node->value = temp;
-        } else {
-            DEBUG_LOG_FATAL("Memory reallocation error on LinkedList.!");
-        }
+        node->value = CUtilsMalloc(list->stride, list->memTracker);
     }
-    memcpy(node->value, value, v_size);
-    node->valueSize = v_size;
+    memcpy(node->value, value, list->stride);
 }
 
 static uint64_t _CalculateListLength(LinkedList* list) {
-    LinkedListHeader* header = list->data;
-    LinkedListNode* node = header->first;
+    LinkedListNode* node = list->first;
     uint64_t current_index = 0;
     while (node) {
+        if (node->value) {
+            current_index++;
+        }
         node = node->next;
-        current_index++;
     }
     return current_index;
 }
 
 static void _RaiseOutOfBounds(LinkedList* list, uint64_t index) {
-    LinkedListHeader* header = list->data;
     uint64_t calculated = _CalculateListLength(list);
-    ASSERT_BREAK(calculated == header->length);
+    ASSERT_BREAK(calculated == list->size);
     DEBUG_LOG_ERROR("Index out of bounds. Index: %I64u, LinkedList length: %I64u",
-                    index, header->length);
+                    index, list->size);
 }
 
 static LinkedListNode* _GetNodeAt(LinkedList* list, uint64_t index,
                                   bool needPrevNode, LinkedListNode** prevNode) {
-    LinkedListHeader* header = list->data;
-    LinkedListNode* node = header->first;
+    LinkedListNode* node = list->first;
     uint64_t node_index = 0;
     while (node) {
-        if (node_index == index) {
+        if (node_index == index && node->value) {
             return node;
         }
         if (needPrevNode) {
             *prevNode = node;
         }
+        if (node->value) {
+            node_index++;
+        }
         node = node->next;
-        node_index++;
     }
     return NULL;
 }
 // PRIVATE END
 
-LinkedList* LinkedListCreate() {
+LinkedList* LinkedListCreate(size_t stride) {
     LinkedList* list = malloc(sizeof(LinkedList));
-    LinkedListNode* first = _NewEmptyNode();
-    LinkedListHeader* header = malloc(sizeof(LinkedListHeader));
-    header->length = 0;
-    header->first = first;
-    header->last = first;
-    list->data = header;
+    list->memTracker = MemoryTrackerInit();
+    list->first = _NewEmptyNode(list);
+    list->last = list->first;
+    list->stride = stride;
+    list->size = 0;
     return list;
 }
 
 void LinkedListClear(LinkedList* list) {
-    LinkedListHeader* header = list->data;
-    if (header->first) {
-        LinkedListNode* node = header->first;
-        while (node) {
-            if (node->value) {
-                free(node->value);
-            }
-            LinkedListNode* next = node->next;
-            free(node);
-            node = next;
+    LinkedListNode* node = list->first;
+    while (node) {
+        if (node->value) {
+            CUtilsFree(node->value, list->memTracker);
         }
+        LinkedListNode* next = node->next;
+        CUtilsFree(node, list->memTracker);
+        node = next;
     }
-    header->length = 0;
-    header->first = NULL;
-    header->last = NULL;
+    list->size = 0;
+    list->first = _NewEmptyNode(list);
+    list->last = list->first;
 }
 
 void LinkedListFree(LinkedList* list) {
-    if (list->data) {
-        LinkedListClear(list);
-        free(list->data);
-    }
+    LinkedListClear(list);
+    CUtilsFree(list->first, list->memTracker);
+    MemoryTrackerClose(list->memTracker);
     free(list);
 }
 
-void LinkedListSetElementValue(LinkedList* list, uint64_t index,
-                               const void* value, size_t value_size) {
-    LinkedListHeader* header = list->data;
-    if (header->first == NULL) {
-        _RaiseOutOfBounds(list, index);
-        return;
-    }
+void LinkedListSetValue(LinkedList* list, const void* value, uint64_t index) {
     LinkedListNode* node = _GetNodeAt(list, index, false, NULL);
     if (node == NULL) {
         _RaiseOutOfBounds(list, index);
         return;
     }
-    _SetNodeValue(node, value, value_size);
+    _SetNodeValue(list, node, value);
 }
 
-void* LinkedListGetElementValue(LinkedList* list, uint64_t index) {
-    LinkedListHeader* header = list->data;
-    if (header->first == NULL) {
-        _RaiseOutOfBounds(list, index);
-        return NULL;
-    }
+void* LinkedListGetValue(LinkedList* list, uint64_t index) {
     LinkedListNode* node = _GetNodeAt(list, index, false, NULL);
     if (node == NULL) {
         _RaiseOutOfBounds(list, index);
@@ -147,119 +112,72 @@ void* LinkedListGetElementValue(LinkedList* list, uint64_t index) {
     return node->value;
 }
 
-size_t LinkedListGetElementSize(LinkedList* list, uint64_t index) {
-    LinkedListHeader* header = list->data;
-    if (header->first == NULL) {
-        _RaiseOutOfBounds(list, index);
-        return 0;
-    }
-    LinkedListNode* node = _GetNodeAt(list, index, false, NULL);
-    if (node == NULL) {
-        _RaiseOutOfBounds(list, index);
-        return 0;
-    }
-    return node->valueSize;
-}
-
 uint64_t LinkedListGetSize(LinkedList* list) {
-    LinkedListHeader* header = list->data;
-    return header->length;
+    list->size = _CalculateListLength(list);
+    return list->size;
 }
 
-void LinkedListPush(LinkedList* list, const void* value, size_t value_size) {
-    LinkedListHeader* header = list->data;
-    if (header->first == NULL) {
-        LinkedListNode* first = _NewEmptyNode();
-        _SetNodeValue(first, value, value_size);
-        first->next = NULL;
-        header->first = first;
-        header->last = first;
-        header->length = 1;
+void LinkedListPush(LinkedList* list, const void* value) {
+    LinkedListNode* node = list->last;
+    if (node->value == NULL) {
+        _SetNodeValue(list, node, value);
+        list->size = _CalculateListLength(list);
     } else {
-        LinkedListNode* node = header->last;
-        if (node->value == NULL) {
-            _SetNodeValue(node, value, value_size);
-            header->length = _CalculateListLength(list);
-        } else {
-            LinkedListNode* newNode = _NewEmptyNode();
-            _SetNodeValue(newNode, value, value_size);
-            newNode->next = NULL;
-            node->next = newNode;
-            header->last = newNode;
-            header->length++;
-        }
+        LinkedListNode* newNode = _NewEmptyNode(list);
+        _SetNodeValue(list, newNode, value);
+        newNode->next = NULL;
+        node->next = newNode;
+        list->last = newNode;
+        list->size++;
     }
 }
 
-void LinkedListPushAt(LinkedList* list, const void* value,
-                      size_t value_size, uint64_t index) {
-    LinkedListHeader* header = list->data;
-    if (header->first == NULL) {
-        if (index != 0) {
-            _RaiseOutOfBounds(list, index);
-            return;
-        }
-        LinkedListNode* first = _NewEmptyNode();
-        _SetNodeValue(first, value, value_size);
-        header->first = first;
-        header->last = first;
-        header->length = 1;
+void LinkedListPushAt(LinkedList* list, const void* value, uint64_t index) {
+    LinkedListNode* prevNode = NULL;
+    LinkedListNode* node = _GetNodeAt(list, index, true, &prevNode);
+    if (node == NULL) {
+        LinkedListPush(list, value);
+        return;
+    }
+    if (node->value == NULL) {
+        _SetNodeValue(list, node, value);
+        list->size = _CalculateListLength(list);
     } else {
-        LinkedListNode* prevNode = NULL;
-        LinkedListNode* node = _GetNodeAt(list, index, true, &prevNode);
-        if (node == NULL) {
-            // TODO add new node to the end
-            _RaiseOutOfBounds(list, index);
-            return;
-        }
-        if (node->value == NULL) {
-            _SetNodeValue(node, value, value_size);
-            header->length = _CalculateListLength(list);
+        LinkedListNode* newNode = _NewEmptyNode(list);
+        _SetNodeValue(list, newNode, value);
+        if (prevNode) {
+            prevNode->next = newNode;
         } else {
-            LinkedListNode* newNode = _NewEmptyNode();
-            _SetNodeValue(newNode, value, value_size);
-            if (prevNode) {
-                prevNode->next = newNode;
-            } else {
-                header->first = newNode;
-            }
-            newNode->next = node;
-            header->length++;
+            list->first = newNode;
         }
+        newNode->next = node;
+        list->size++;
     }
 }
 
-void* LinkedListPop(LinkedList* list, size_t* outValueSize) {
-    return LinkedListPopAt(list, LinkedListGetSize(list) - 1, outValueSize);
+void* LinkedListPop(LinkedList* list) {
+    return LinkedListPopAt(list, LinkedListGetSize(list) - 1);
 }
 
-void* LinkedListPopAt(LinkedList* list, uint64_t index, size_t* outValueSize) {
-    LinkedListHeader* header = list->data;
-    if (header->first == NULL) {
-        _RaiseOutOfBounds(list, index);
-        return NULL;
-    }
+void* LinkedListPopAt(LinkedList* list, uint64_t index) {
     LinkedListNode* prevNode = NULL;
     LinkedListNode* node = _GetNodeAt(list, index, true, &prevNode);
     if (node == NULL) {
         _RaiseOutOfBounds(list, index);
         return NULL;
     }
-    void* value = malloc(node->valueSize);
-    memcpy(value, node->value, node->valueSize);
-    if (outValueSize) {
-        *outValueSize = node->valueSize;
-    }
+    void* value = malloc(list->stride);
+    memcpy(value, node->value, list->stride);
+    CUtilsFree(node->value, list->memTracker);
     if (prevNode) {
         prevNode->next = node->next;
-    } else {
-        header->first = node->next;
+        if (node->next == NULL) {
+            list->last = prevNode;
+        }
+        CUtilsFree(node, list->memTracker);
+    } else if (node->next == NULL) {
+        list->last = list->first;
     }
-    if (node->value) {
-        free(node->value);
-        node->value = NULL;
-    }
-    free(node);
-    header->length--;
+    list->size--;
     return value;
 }

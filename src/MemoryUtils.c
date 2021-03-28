@@ -101,7 +101,7 @@ void* CUtilsRealloc(void* buf, size_t newSize, MemoryTracker memTracker) {
 #endif
 }
 
-void CUtilsFree(void* buf, MemoryTracker memTracker) {
+void* _CUtilsFree(void* buf, MemoryTracker memTracker) {
 #ifdef ENABLE_MEMORY_CHECKS
     uint64_t pointer = (uint64_t)buf;
     if (UniqueArrayRemove(memTracker, &pointer)) {
@@ -113,6 +113,7 @@ void CUtilsFree(void* buf, MemoryTracker memTracker) {
 #else
     free(buf);
 #endif
+    return NULL;
 }
 
 void MemoryTrackerClose(MemoryTracker memTracker) {

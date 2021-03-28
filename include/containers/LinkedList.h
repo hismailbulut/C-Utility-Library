@@ -3,44 +3,58 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "MemoryUtils.h"
+
+typedef struct LinkedListNode {
+    void* value;
+    struct LinkedListNode* next;
+} LinkedListNode;
+
 typedef struct LinkedList {
-    void* data;
+    MemoryTracker memTracker;
+    size_t stride;
+    uint64_t size;
+    LinkedListNode* first;
+    LinkedListNode* last;
 } LinkedList;
 
-LinkedList* LinkedListCreate();
+/* Creates a linkedlist with all elements size is stride. */
+LinkedList* LinkedListCreate(size_t stride);
 
+/* Deletes all nodes. */
 void LinkedListClear(LinkedList* list);
 
 void LinkedListFree(LinkedList* list);
 
-void LinkedListSetElementValue(LinkedList* list, uint64_t index,
-                               const void* value, size_t value_size);
+/* Sets value at index. */
+void LinkedListSetValue(LinkedList* list, const void* value, uint64_t index);
 
-void* LinkedListGetElementValue(LinkedList* list, uint64_t index);
+/* Returns a pointer to value at index. */
+void* LinkedListGetValue(LinkedList* list, uint64_t index);
 
-size_t LinkedListGetElementSize(LinkedList* list, uint64_t index);
-
+/* Recalculates and returns the linkedlist size. */
 uint64_t LinkedListGetSize(LinkedList* list);
 
-void LinkedListPush(LinkedList* list, const void* value, size_t valueSize);
-#define LinkedListPushLV(list, value) \
-    LinkedListPush(list, &value, sizeof(value))
-#define LinkedListPushRV(list, type, value)        \
-    {                                              \
-        type temp = value;                         \
-        LinkedListPush(list, &temp, sizeof(type)); \
+/* Adds the value to end of the linkedlist. */
+void LinkedListPush(LinkedList* list, const void* value);
+#define LinkedListPushRV(list, type, value) \
+    {                                       \
+        type temp = value;                  \
+        LinkedListPush(list, &temp);        \
     }
 
-void LinkedListPushAt(LinkedList* list, const void* value,
-                      size_t valueSize, uint64_t index);
-#define LinkedListPushAtLV(list, value, index) \
-    LinkedListPushAt(list, &value, sizeof(value), index)
-#define LinkedListPushAtRV(list, type, value, index)        \
-    {                                                       \
-        type temp = value;                                  \
-        LinkedListPushAt(list, &temp, sizeof(type), index); \
+/* Adds the value to index of the linkedlist. */
+void LinkedListPushAt(LinkedList* list, const void* value, uint64_t index);
+#define LinkedListPushAtRV(list, type, value, index) \
+    {                                                \
+        type temp = value;                           \
+        LinkedListPushAt(list, &temp, index);        \
     }
 
-void* LinkedListPop(LinkedList* list, size_t* outValueSize);
+/* Pops last element from linkedlist and returns its value.
+ * Don't forget to free the value. */
+void* LinkedListPop(LinkedList* list);
 
-void* LinkedListPopAt(LinkedList* list, uint64_t index, size_t* outValueSize);
+/* Pops element at index and returns its value.
+ * Don't forget to free the value. */
+void* LinkedListPopAt(LinkedList* list, uint64_t index);

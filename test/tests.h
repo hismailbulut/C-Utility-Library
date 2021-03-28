@@ -18,14 +18,8 @@ void test_array();
 
 void test_strings();
 
-void simple_test_LinkedList();
+void test_linkedlist();
 
-void simple_test_Map();
-
-void simple_test_Files();
-
-void create_dictionary_and_json();
-
-void read_json_file_and_parse();
+void test_dictionary_and_json();
 
 void test_unique_array();

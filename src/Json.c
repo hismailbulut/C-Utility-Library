@@ -251,7 +251,6 @@ static _TokenInformation _GetNextToken(_JsonReadStatus* status) {
             if ((tokenEnd = _FindStringEnd(status, i + 1))) {
                 tokenInfo.token = StringSubString(&status->jsonText, i + 1, tokenEnd);
                 status->index = tokenEnd + 1;
-                DEBUG_LOG_INFO("Char after string: %c", status->jsonText.c_str[status->index]);
                 return tokenInfo;
             } else {
                 _RaiseJsonReadError("Can't find end of the string.", status);

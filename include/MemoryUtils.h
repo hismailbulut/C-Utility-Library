@@ -32,6 +32,9 @@ void* CUtilsMalloc(size_t size, MemoryTracker memTracker);
 
 void* CUtilsRealloc(void* buf, size_t newSize, MemoryTracker memTracker);
 
-void CUtilsFree(void* buf, MemoryTracker memTracker);
+void* _CUtilsFree(void* buf, MemoryTracker memTracker);
+
+#define CUtilsFree(buf, memTracker) \
+    buf = _CUtilsFree(buf, memTracker);
 
 void MemoryTrackerClose(MemoryTracker memTracker);
