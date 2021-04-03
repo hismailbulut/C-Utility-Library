@@ -18,7 +18,7 @@ static void _FreePairValue(Dictionary* dict, DictPair* pair) {
         } else if (pair->valueType == DATA_TYPE_OBJECT) {
             DictionaryFree(pair->value);
         } else {
-            CUtilsFree(pair->value, dict->memTracker);
+            CUtilsFree(pair->value);
         }
     }
     pair->value = NULL;
@@ -30,19 +30,19 @@ void _DictionarySetPairValue(Dictionary* dict, DictPair* pair,
     pair->valueType = valueType;
     switch (valueType) {
         case DATA_TYPE_STRING:
-            pair->value = CUtilsMalloc(strlen(value) + 1, dict->memTracker);
+            pair->value = CUtilsMalloc(strlen(value) + 1);
             memcpy(pair->value, value, strlen(value) + 1);
             break;
         case DATA_TYPE_NUMBER:
-            pair->value = CUtilsMalloc(sizeof(int64_t), dict->memTracker);
+            pair->value = CUtilsMalloc(sizeof(int64_t));
             memcpy(pair->value, value, sizeof(int64_t));
             break;
         case DATA_TYPE_FLOAT:
-            pair->value = CUtilsMalloc(sizeof(float), dict->memTracker);
+            pair->value = CUtilsMalloc(sizeof(float));
             memcpy(pair->value, value, sizeof(float));
             break;
         case DATA_TYPE_BOOL:
-            pair->value = CUtilsMalloc(sizeof(bool), dict->memTracker);
+            pair->value = CUtilsMalloc(sizeof(bool));
             memcpy(pair->value, value, sizeof(bool));
             break;
         case DATA_TYPE_LIST:
@@ -59,8 +59,8 @@ void _DictionarySetPairValue(Dictionary* dict, DictPair* pair,
 
 DictPair* _DictionaryCreatePair(Dictionary* dict, char* key,
                                 CUtilsDataType valueType, void* value) {
-    DictPair* pair = CUtilsMalloc(sizeof(DictPair), dict->memTracker);
-    pair->key = CUtilsMalloc(strlen(key) + 1, dict->memTracker);
+    DictPair* pair = CUtilsMalloc(sizeof(DictPair));
+    pair->key = CUtilsMalloc(strlen(key) + 1);
     memcpy(pair->key, key, strlen(key) + 1);
     _DictionarySetPairValue(dict, pair, valueType, value);
     return pair;
@@ -68,9 +68,8 @@ DictPair* _DictionaryCreatePair(Dictionary* dict, char* key,
 // PRIVATE END
 
 Dictionary* DictionaryCreate() {
-    Dictionary* dict = malloc(sizeof(Dictionary));
+    Dictionary* dict = CUtilsMalloc(sizeof(Dictionary));
     dict->data = ArrayCreate(uint64_t);
-    dict->memTracker = MemoryTrackerInit();
     return dict;
 }
 
@@ -89,16 +88,15 @@ void DictionaryFree(Dictionary* dict) {
         DictionaryFreePair(dict, pair);
     }
     ArrayFree(dict->data);
-    MemoryTrackerClose(dict->memTracker);
-    free(dict);
+    CUtilsFree(dict);
 }
 
 void DictionaryFreePair(Dictionary* dict, DictPair* pair) {
     if (pair->key) {
-        CUtilsFree(pair->key, dict->memTracker);
+        CUtilsFree(pair->key);
     }
     _FreePairValue(dict, pair);
-    CUtilsFree(pair, dict->memTracker);
+    CUtilsFree(pair);
 }
 
 DictPair* DictionaryGet(Dictionary* dict, char* key) {
@@ -134,7 +132,7 @@ void DictionaryRemove(Dictionary* dict, char* key) {
         DictPair* pair = (DictPair*)dict->data[i];
         if (pair->key && strcmp(pair->key, key) == 0) {
             DictionaryFreePair(dict, pair);
-            free(ArrayPopAt(dict->data, i));
+            CUtilsFree(ArrayPopAt(dict->data, i));
             return;
         }
     }

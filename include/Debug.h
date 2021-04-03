@@ -2,6 +2,8 @@
 
 #ifdef _DEBUG
 
+#define DEBUG_BREAK __debugbreak()
+
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -42,22 +44,20 @@ BREAK IN CODE:\n\
          FUNC: %s\n\
          LINE: %d\n",                          \
                 __FILE__, __func__, __LINE__); \
-        __debugbreak();                        \
+        DEBUG_BREAK;                           \
     }
 
-#define BREAK_MSG(message, args...)            \
-    {                                          \
-        fprintf(stdout,                        \
+#define BREAK_MSG(message, args...)                     \
+    {                                                   \
+        fprintf(stdout,                                 \
                 "\
 BREAK IN CODE:\n\
          FILE: %s\n\
          FUNC: %s\n\
          LINE: %d\n\
-      MESSAGE: ",                              \
-                __FILE__, __func__, __LINE__); \
-        fprintf(stdout, message, ##args);      \
-        fprintf(stdout, "\n");                 \
-        __debugbreak();                        \
+      MESSAGE: %s\n",                                   \
+                __FILE__, __func__, __LINE__, message); \
+        DEBUG_BREAK;                                    \
     }
 
 #define ASSERT_BREAK(cond)                                \
@@ -70,25 +70,23 @@ ASSERTION FAILED: %s\n\
             FUNC: %s\n\
             LINE: %d\n",                                  \
                     #cond, __FILE__, __func__, __LINE__); \
-            __debugbreak();                               \
+            DEBUG_BREAK;                                  \
         }                                                 \
     }
 
-#define ASSERT_BREAK_MSG(cond, message, args...)          \
-    {                                                     \
-        if (!(cond)) {                                    \
-            fprintf(stdout,                               \
+#define ASSERT_BREAK_MSG(cond, message, args...)                   \
+    {                                                              \
+        if (!(cond)) {                                             \
+            fprintf(stdout,                                        \
                     "\
 ASSERTION FAILED: %s\n\
             FILE: %s\n\
             FUNC: %s\n\
             LINE: %d\n\
-         MESSAGE: ",                                      \
-                    #cond, __FILE__, __func__, __LINE__); \
-            fprintf(stdout, message, ##args);             \
-            fprintf(stdout, "\n");                        \
-            __debugbreak();                               \
-        }                                                 \
+         MESSAGE: %s\n",                                           \
+                    #cond, __FILE__, __func__, __LINE__, message); \
+            DEBUG_BREAK;                                           \
+        }                                                          \
     }
 
 #else
@@ -96,6 +94,7 @@ ASSERTION FAILED: %s\n\
 #define DEBUG_LOG_INFO(message, args...)
 #define DEBUG_LOG_WARN(message, args...)
 #define DEBUG_LOG_ERROR(message, args...)
+#define DEBUG_LOG_FATAL(message, args...)
 #define BREAK()
 #define BREAK_MSG(message, args...)
 #define ASSERT_BREAK(cond)

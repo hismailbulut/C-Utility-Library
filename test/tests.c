@@ -11,8 +11,10 @@
 #include "Json.h"
 #include "MemoryUtils.h"
 #include "StringUtils.h"
+#include "Timer.h"
 #include "containers/Array.h"
 #include "containers/Dictionary.h"
+#include "containers/HashMap.h"
 #include "containers/LinkedList.h"
 #include "containers/List.h"
 #include "containers/UniqueArray.h"
@@ -28,18 +30,29 @@ char* test_string =
     "venenatis, arcu dolor molestie dolor, vitae congue orci risus a nulla.\n"
     "Pellentesque sit amet arcu. In mattis laoreet enim. Pellentesque id augue et\n"
     "arcu blandit tincidunt. Pellentesque elit ante, rhoncus quis.\n"
-    "0123456789 !'^+%&/()=?_>£#$½6{[]}@/*-|_ üğışçö ÜĞİŞÇÖ æß´~¨\n";
+    "0123456789 !'^+%&/()=?_>£#$½6{[]}@/*-|_ üğışçö ÜĞİŞÇÖ æß´~¨ \n";
 
 char* test_string_2 = ":1;2:3;4:,;5:6;9898;i:,jkl:,asd:,asdasd,";
 
 int64_t test_int_array[] = {5, -7, 98, 165, 789, -1, 0, 456, -123, 987};
 float test_float_array[] = {5.45, 7.789, -98.145, 165.002, -789.9, 1.0, 0.5, 456.3, -123.7, 987.0};
 
+char* rand_string(uint64_t max_len, char from, char to) {
+    uint64_t len = rand() % (max_len - 1) + 1;
+    char* str = malloc(len + 1);
+    for (uint64_t i = 0; i < len; i++) {
+        str[i] = rand() % (to - from) + from;
+        ASSERT_BREAK(str[i] >= from);
+        ASSERT_BREAK(str[i] <= to);
+    }
+    str[len] = 0;
+    return str;
+}
+
 void test_array() {
     TEST_START;
-    uint64_t test_size = 100000;
+    uint64_t test_size = 1000;
     float* array = ArrayCreate(float);
-
     srand(time(0));
     for (uint64_t i = 0; i < test_size; i++) {
         float negative = rand() % 2 == 0 ? 1 : -1;
@@ -53,12 +66,38 @@ void test_array() {
     TEST_END;
 }
 
+void test_array_performance() {
+    TEST_START;
+    uint64_t test_size = 10000;
+    DEBUG_LOG_INFO("Test size: %I64u", test_size);
+    Timer t = TimerCreate("test_array_performance", true);
+    int64_t* array = ArrayCreate(int64_t);
+    for (uint64_t i = 0; i < test_size; i++) {
+        int64_t value = rand();
+        ArrayPush(array, value);
+    }
+    for (uint64_t i = 0; i < test_size; i++) {
+        int64_t value = rand();
+        uint64_t index = rand() % ArrayGetSize(array);
+        ArrayPushAt(array, value, index);
+    }
+    for (uint64_t i = 0; i < test_size / 2; i++) {
+        CUtilsFree(ArrayPop(array));
+    }
+    for (uint64_t i = 0; i < test_size / 2; i++) {
+        uint64_t index = rand() % ArrayGetSize(array);
+        CUtilsFree(ArrayPopAt(array, index));
+    }
+    ArrayFree(array);
+    TimerLogElapsed(&t);
+}
+
 void test_strings() {
     TEST_START;
     // encode & decode
     String s = StringCreateCStr(test_string);
-    StringEncode(&s, "my powerfull encoding function");
-    StringDecode(&s, "my powerfull encoding function");
+    StringEncode(&s, "some password");
+    StringDecode(&s, "some password");
     TEST_CHECK(strcmp(s.c_str, test_string) == 0);
     StringFree(&s);
     // tokenize
@@ -80,13 +119,13 @@ void test_strings() {
     TEST_END;
 }
 
-// void print_linkedlist(LinkedList* list) {
-//     printf("LinkedList: ");
-//     for (uint64_t i = 0; i < list->size; i++) {
-//         printf("%I64u ", *(uint64_t*)LinkedListGetValue(list, i));
-//     }
-//     printf("\n");
-// }
+void print_uint64_linkedlist(LinkedList* list) {
+    printf("LinkedList: ");
+    for (uint64_t i = 0; i < list->size; i++) {
+        printf("%I64u ", *(uint64_t*)LinkedListGetValue(list, i));
+    }
+    printf("\n");
+}
 
 void test_linkedlist() {
     TEST_START;
@@ -106,18 +145,53 @@ void test_linkedlist() {
     TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 0) == 10);
     TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 2) == 12);
     TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 6) == 16);
-    LinkedListPopAt(list, 6);
-    LinkedListPopAt(list, 4);
-    LinkedListPopAt(list, 2);
-    LinkedListPopAt(list, 0);
+    CUtilsFree(LinkedListPopAt(list, 6));
+    CUtilsFree(LinkedListPopAt(list, 4));
+    CUtilsFree(LinkedListPopAt(list, 2));
+    CUtilsFree(LinkedListPopAt(list, 0));
     TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 0) == 0);
     TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 2) == 2);
-    LinkedListPop(list);
-    LinkedListPop(list);
-    LinkedListPop(list);
+    CUtilsFree(LinkedListPop(list));
+    CUtilsFree(LinkedListPop(list));
+    CUtilsFree(LinkedListPop(list));
     TEST_CHECK(list->size == 3);
+    CUtilsFree(LinkedListPop(list));
+    CUtilsFree(LinkedListPop(list));
+    CUtilsFree(LinkedListPop(list));
+    TEST_CHECK(list->size == 0);
+    LinkedListPushRV(list, uint64_t, 0);
+    LinkedListPushRV(list, uint64_t, 1);
+    LinkedListPushRV(list, uint64_t, 2);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 1) == 1);
+    TEST_CHECK(*(uint64_t*)LinkedListGetValue(list, 2) == 2);
     LinkedListFree(list);
     TEST_END;
+}
+
+void test_linkedlist_performance() {
+    TEST_START;
+    uint64_t test_size = 10000;
+    DEBUG_LOG_INFO("Test size: %I64u", test_size);
+    Timer t = TimerCreate("test_linkedlist_performance", true);
+    LinkedList* list = LinkedListCreate(sizeof(int64_t));
+    for (uint64_t i = 0; i < test_size; i++) {
+        int64_t value = rand();
+        LinkedListPush(list, &value);
+    }
+    for (uint64_t i = 0; i < test_size; i++) {
+        int64_t value = rand();
+        uint64_t index = rand() % list->size;
+        LinkedListPushAt(list, &value, index);
+    }
+    for (uint64_t i = 0; i < test_size / 2; i++) {
+        CUtilsFree(LinkedListPop(list));
+    }
+    for (uint64_t i = 0; i < test_size / 2; i++) {
+        uint64_t index = rand() % list->size;
+        CUtilsFree(LinkedListPopAt(list, index));
+    }
+    LinkedListFree(list);
+    TimerLogElapsed(&t);
 }
 
 void test_dictionary_and_json() {  // Create dictionary.
@@ -208,13 +282,13 @@ void test_dictionary_and_json() {  // Create dictionary.
     TEST_END;
 }
 
-// void print_float_unique_array(UniqueArray* array) {
-//     printf("Arr: ");
-//     for (uint64_t i = 0; i < ArrayGetSize(array->data); i++) {
-//         printf("%f ", *(float*)UniqueArrayValueAt(array, i));
-//     }
-//     printf("\n");
-// }
+void print_float_unique_array(UniqueArray* array) {
+    printf("Arr: ");
+    for (uint64_t i = 0; i < ArrayGetSize(array->data); i++) {
+        printf("%f ", *(float*)UniqueArrayValueAt(array, i));
+    }
+    printf("\n");
+}
 
 int test_unique_array_float_comparator(const void* v1, const void* v2) {
     float myval1 = *(float*)v1;
@@ -251,5 +325,45 @@ void test_unique_array() {
         // printf("Index: %I64u, fb: %f, fc: %f\n", i, fb, fc);
         // }
     }
+    TEST_END;
+}
+
+void print_integer_type_hash_map(HashMap* hmap) {
+    DEBUG_LOG_INFO("HashMap: ");
+    for (uint64_t i = 0; i < UniqueArrayGetSize(hmap->keys); i++) {
+        DEBUG_LOG_INFO("Key hash: %I64u \t Value: %i",
+                       *(uint64_t*)UniqueArrayValueAt(hmap->keys, i),
+                       *(int*)ArrayGetValue(hmap->values, i));
+    }
+}
+
+void test_hash_map() {
+    TEST_START;
+    HashMap* hmap = HashMapCreate(sizeof(int));
+    HashMapSetRV(hmap, "ford", int, 15450);
+    HashMapSetRV(hmap, "toyota", int, 27499);
+    HashMapSetRV(hmap, "renault", int, 18000);
+    HashMapSetRV(hmap, "mercedes", int, 120250);
+    HashMapSetRV(hmap, "bmw", int, 105499);
+    HashMapSetRV(hmap, "audi", int, 109999);
+    HashMapSetRV(hmap, "porche", int, 249000);
+    HashMapSetRV(hmap, "ferrari", int, 414999);
+    // Raise some vehicles
+    HashMapSetRV(hmap, "ford", int, 25999);
+    HashMapSetRV(hmap, "toyota", int, 30000);
+    HashMapSetRV(hmap, "mercedes", int, 150000);
+
+    TEST_CHECK(HashMapContains(hmap, "bmw"));
+
+    TEST_CHECK(*(int*)HashMapGet(hmap, "ford") = 25999);
+    TEST_CHECK(*(int*)HashMapGet(hmap, "toyota") == 30000);
+    TEST_CHECK(*(int*)HashMapGet(hmap, "bmw") == 105499);
+    TEST_CHECK(*(int*)HashMapGet(hmap, "ferrari") == 414999);
+
+    TEST_CHECK(HashMapRemove(hmap, "ferrari"));
+    // print_integer_type_hash_map(hmap);
+    TEST_CHECK(HashMapGet(hmap, "ferrari") == NULL);
+
+    HashMapFree(hmap);
     TEST_END;
 }

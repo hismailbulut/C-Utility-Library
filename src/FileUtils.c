@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include "Debug.h"
+#include "MemoryUtils.h"
 #include "StringUtils.h"
 
 static size_t _GetFileSize(const char* path) {
@@ -31,7 +32,7 @@ bool FileUtilsReadString(const char* path, String* outString) {
     }
     bool success = false;
     FILE* file;
-    char* buffer = malloc(fileSize + 1);
+    char* buffer = CUtilsMalloc(fileSize + 1);
     uint64_t readed;
     if (fopen_s(&file, path, "r") == 0) {
         if ((readed = fread(buffer, 1, fileSize, file)) > 0) {
@@ -41,7 +42,7 @@ bool FileUtilsReadString(const char* path, String* outString) {
         }
         fclose(file);
     }
-    free(buffer);
+    CUtilsFree(buffer);
     if (!success) {
         outString->c_str = NULL;
         outString->length = 0;
@@ -89,12 +90,12 @@ bool FileUtilsReadBinary(const char* path, void** outBuffer,
     bool success = false;
     FILE* file;
     if (fopen_s(&file, path, "rb") == 0) {
-        *outBuffer = malloc(fileSize);
+        *outBuffer = CUtilsMalloc(fileSize);
         if (fread(*outBuffer, 1, fileSize, file) > 0) {
             *outBufferSize = fileSize;
             success = true;
         } else {
-            free(*outBuffer);
+            CUtilsFree(*outBuffer);
         }
         fclose(file);
     }

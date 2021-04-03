@@ -25,11 +25,11 @@ static void _CheckCapacity(String* string) {
     }
 }
 
-static char* _CreateStringFormat(const char* Format, va_list args) {
+static char* _CreateStrFormat(const char* Format, va_list args) {
     char* str = NULL;
     int n = vsnprintf(NULL, 0, Format, args);
     assert(n > 0);
-    str = malloc(n + 1);
+    str = CUtilsMalloc(n + 1);
     int c = vsnprintf(str, n + 1, Format, args);
     assert(c == n);
     return str;
@@ -55,9 +55,9 @@ String StringCreateCStr(const char* str) {
 String StringCreateFormat(const char* Format, ...) {
     va_list args;
     va_start(args, Format);
-    char* f = _CreateStringFormat(Format, args);
+    char* f = _CreateStrFormat(Format, args);
     String s = StringCreateCStr(f);
-    free(f);
+    CUtilsFree(f);
     va_end(args);
     return s;
 }
@@ -180,9 +180,9 @@ void StringAppendChar(String* string, const char c) {
 void StringAppendFormat(String* string, const char* Format, ...) {
     va_list args;
     va_start(args, Format);
-    char* f = _CreateStringFormat(Format, args);
+    char* f = _CreateStrFormat(Format, args);
     StringAppendCStr(string, f);
-    free(f);
+    CUtilsFree(f);
     va_end(args);
 }
 
@@ -234,7 +234,7 @@ void StringTrim(String* string, const char* trimList) {
     while (i < stringLen) {
         for (uint64_t j = 0; j < trimListLen; j++) {
             if (string->c_str[i] == trimList[j]) {
-                free(ArrayPopAt(string->c_str, i));
+                CUtilsFree(ArrayPopAt(string->c_str, i));
                 stringLen--;
                 i--;
             }

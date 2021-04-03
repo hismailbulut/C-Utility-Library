@@ -8,6 +8,7 @@
 #include <string.h>
 
 #include "Debug.h"
+#include "MemoryUtils.h"
 
 typedef enum header_fields {
     CAPACITY = 0,
@@ -35,7 +36,7 @@ static inline void _RaiseIndexOutOfBounds(const void *array, uint64_t index) {
 
 void *_ArrayCreate(size_t stride, uint64_t capacity) {
     uint64_t create_size = TOTAL * sizeof(uint64_t) + stride * capacity;
-    uint64_t *head = malloc(create_size);
+    uint64_t *head = CUtilsMalloc(create_size);
     memset(head, 0, create_size);
     head[CAPACITY] = capacity;
     head[SIZE] = 0;
@@ -44,7 +45,7 @@ void *_ArrayCreate(size_t stride, uint64_t capacity) {
 }
 
 void *_ArrayFree(void *array) {
-    free(_Header(array));
+    CUtilsFree(_Header(array));
     return NULL;
 }
 
@@ -53,20 +54,17 @@ void *_ArrayResize(void *array, uint64_t new_capacity) {
     uint64_t size = ArrayGetSize(array);
     uint64_t stride = ArrayGetStride(array);
     uint64_t create_size = TOTAL * sizeof(uint64_t) + stride * new_capacity;
-    void *temp = realloc(_Header(array), create_size);
-    if (temp != NULL) {
-        uint64_t *head = temp;
-        array = (void *)(head + TOTAL);
-        _FieldSet(array, CAPACITY, new_capacity);
-        uint64_t new_size = (size > new_capacity) ? new_capacity : size;
-        _FieldSet(array, SIZE, new_size);
-        if (new_size < new_capacity) {
-            memset((char *)array + new_size * stride,
-                   0,
-                   (new_capacity - new_size) * stride);
-        }
-    } else {
-        DEBUG_LOG_FATAL("Memory reallocation error on Array.");
+    uint64_t *head = CUtilsRealloc(_Header(array), create_size);
+
+    array = (void *)(head + TOTAL);
+    _FieldSet(array, CAPACITY, new_capacity);
+    uint64_t new_size = (size > new_capacity) ? new_capacity : size;
+    _FieldSet(array, SIZE, new_size);
+
+    if (new_size < new_capacity) {
+        memset((char *)array + new_size * stride,
+               0,
+               (new_capacity - new_size) * stride);
     }
     return array;
 }
@@ -111,7 +109,7 @@ void *ArrayPopAt(void *array, uint64_t index) {
     if (index >= size) {
         index = size - 1;
     }
-    void *value = malloc(stride);
+    void *value = CUtilsMalloc(stride);
     void *src = (char *)array + index * stride;
     memcpy(value, src, stride);
     _FieldSet(array, SIZE, size - 1);
@@ -166,7 +164,22 @@ void *_ArrayRemove(void *array, uint64_t startIndex, uint64_t length) {
     return array;
 }
 
-void *ArrayGetElementPtr(const void *array, uint64_t index) {
+void ArraySetValue(void *array, void *value, uint64_t index) {
+    if (index >= ArrayGetSize(array)) {
+        _RaiseIndexOutOfBounds(array, index);
+        return;
+    }
+    size_t stride = ArrayGetStride(array);
+    void *dest = (char *)array + index * stride;
+    memcpy(dest, value, stride);
+}
+
+void *ArrayGetValue(const void *array, uint64_t index) {
+    uint64_t size = ArrayGetSize(array);
+    if (index >= size && size > 0) {
+        _RaiseIndexOutOfBounds(array, index);
+        return NULL;
+    }
     return (char *)array + index * ArrayGetStride(array);
 }
 

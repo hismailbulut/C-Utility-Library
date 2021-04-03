@@ -1,20 +1,20 @@
 cmake_minimum_required(VERSION 3.19)
 project(c_utils)
 
-set(C_UTILS_LIBRARY_SOURCE_FILES
+set(CUTILS_LIBRARY_SOURCE_FILES
     "src/containers/Array.c"
-    "src/containers/UniqueArray.c"
-    "src/containers/List.c"
-    "src/containers/LinkedList.c"
-    "src/containers/HashMap.c"
     "src/containers/Dictionary.c"
+    "src/containers/HashMap.c"
+    "src/containers/LinkedList.c"
+    "src/containers/List.c"
+    "src/containers/UniqueArray.c"
     "src/StringUtils.c"
     "src/MemoryUtils.c"
     "src/FileUtils.c"
     "src/Json.c"
     "src/Timer.c")
 
-add_library(${PROJECT_NAME} ${C_UTILS_LIBRARY_SOURCE_FILES})
+add_library(${PROJECT_NAME} ${CUTILS_LIBRARY_SOURCE_FILES})
 target_include_directories(${PROJECT_NAME} PUBLIC "include")
 
 if(TESTS_ENABLED)

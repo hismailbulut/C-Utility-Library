@@ -52,7 +52,11 @@ void* _ArrayRemove(void* array, uint64_t startIndex, uint64_t length);
 #define ArrayRemove(array, startIndex, length) \
     array = _ArrayRemove(array, startIndex, length)
 
-void* ArrayGetElementPtr(const void* array, uint64_t index);
+// This is useful if array is void pointer.
+void ArraySetValue(void* array, void* value, uint64_t index);
+
+// This is useful if array is void pointer.
+void* ArrayGetValue(const void* array, uint64_t index);
 
 uint64_t ArrayGetCapacity(const void* array);
 

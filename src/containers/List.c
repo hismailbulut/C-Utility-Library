@@ -11,25 +11,25 @@
 #include "containers/Dictionary.h"
 
 static ListNode* _ListCreateNode(List* list, CUtilsDataType type, void* value) {
-    ListNode* node = CUtilsMalloc(sizeof(ListNode), list->memTracker);
+    ListNode* node = CUtilsMalloc(sizeof(ListNode));
     memset(node, 0, sizeof(ListNode));
     node->dataType = type;
     switch (type) {
         case DATA_TYPE_STRING:;
             uint64_t len = strlen(value);
-            node->value = CUtilsMalloc(len + 1, list->memTracker);
+            node->value = CUtilsMalloc(len + 1);
             memcpy(node->value, value, len + 1);
             break;
         case DATA_TYPE_NUMBER:
-            node->value = CUtilsMalloc(sizeof(int64_t), list->memTracker);
+            node->value = CUtilsMalloc(sizeof(int64_t));
             memcpy(node->value, value, sizeof(int64_t));
             break;
         case DATA_TYPE_FLOAT:
-            node->value = CUtilsMalloc(sizeof(float), list->memTracker);
+            node->value = CUtilsMalloc(sizeof(float));
             memcpy(node->value, value, sizeof(float));
             break;
         case DATA_TYPE_BOOL:
-            node->value = CUtilsMalloc(sizeof(bool), list->memTracker);
+            node->value = CUtilsMalloc(sizeof(bool));
             memcpy(node->value, value, sizeof(bool));
             break;
         case DATA_TYPE_LIST:
@@ -46,9 +46,8 @@ static ListNode* _ListCreateNode(List* list, CUtilsDataType type, void* value) {
 }
 
 List* ListCreate() {
-    List* list = malloc(sizeof(List));
+    List* list = CUtilsMalloc(sizeof(List));
     list->data = ArrayCreate(uint64_t);
-    list->memTracker = MemoryTrackerInit();
     return list;
 }
 
@@ -73,7 +72,7 @@ void ListFree(List* list) {
         ArrayFree(list->data);
         list->data = NULL;
     }
-    free(list);
+    CUtilsFree(list);
 }
 
 void ListFreeNode(List* list, ListNode* node) {
@@ -86,11 +85,11 @@ void ListFreeNode(List* list, ListNode* node) {
                 DictionaryFree(node->value);
                 break;
             default:
-                CUtilsFree(node->value, list->memTracker);
+                CUtilsFree(node->value);
                 break;
         }
     }
-    CUtilsFree(node, list->memTracker);
+    CUtilsFree(node);
 }
 
 void ListSetValue(List* list, uint64_t index, CUtilsDataType type, void* value) {
@@ -130,7 +129,7 @@ ListNode* ListPop(List* list) {
         return NULL;
     }
     ListNode* node = (ListNode*)*pointer;
-    free(pointer);
+    CUtilsFree(pointer);
     return node;
 }
 
@@ -140,7 +139,7 @@ ListNode* ListPopAt(List* list, uint64_t index) {
         return NULL;
     }
     ListNode* node = (ListNode*)*pointer;
-    free(pointer);
+    CUtilsFree(pointer);
     return node;
 }
 

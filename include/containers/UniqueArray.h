@@ -34,26 +34,30 @@ UniqueArray* UniqueArrayCreate(size_t stride, size_t capacity,
 
 void UniqueArrayFree(UniqueArray* uniqueArray);
 
-/* Adds the given value to the UniqueArray if not contains it. */
+// Adds the given value to the UniqueArray if not contains it.
 bool UniqueArrayAdd(UniqueArray* uniqueArray, void* value);
 
-/* Shortcut for adding rvalues to UniqueArray. 
- * Note: Return bool value is forgetting. */
+// Shortcut for adding rvalues to UniqueArray.
+// Note: Return value is forgotten.
 #define UniqueArrayAddRV(uniqueArray, type, value) \
     {                                              \
         type temp = value;                         \
         UniqueArrayAdd(uniqueArray, &temp);        \
     }
 
-/* Removes the given value from UniqueArray if contains. */
-bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value);
+// Adds the value to the array. Changes value if it founds. Returns
+// index of the value.
+bool UniqueArrayForceAdd(UniqueArray* uniqueArray, void* value, uint64_t* outIndex);
 
-/* Shortcut for removing values from UniqueArray. 
- * Note: Return bool value is forgetting. */
+// Removes the given value from UniqueArray if contains.
+bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value, uint64_t* outIndex);
+
+// Shortcut for removing values from UniqueArray.
+// Note: Return value and outIndex are forgotten.
 #define UniqueArrayRemoveRV(uniqueArray, type, value) \
     {                                                 \
         type temp = value;                            \
-        UniqueArrayRemove(uniqueArray, &temp);        \
+        UniqueArrayRemove(uniqueArray, &temp, NULL);  \
     }
 
 /* Returns true if given value is in the UniqueArray. False otherwise. */

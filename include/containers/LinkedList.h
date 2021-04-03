@@ -11,14 +11,13 @@ typedef struct LinkedListNode {
 } LinkedListNode;
 
 typedef struct LinkedList {
-    MemoryTracker memTracker;
     size_t stride;
     uint64_t size;
     LinkedListNode* first;
     LinkedListNode* last;
 } LinkedList;
 
-/* Creates a linkedlist with all elements size is stride. */
+/* Creates an empty LinkedList. Stride is the size of the each element. */
 LinkedList* LinkedListCreate(size_t stride);
 
 /* Deletes all nodes. */

@@ -1,26 +1,35 @@
 #pragma once
 
 #include <stdint.h>
-// typedef struct Map {
-//     void* data;
-// } Map;
-//
-// Map* MapCreate();
-//
-// void MapFree(Map* map);
-//
-// void MapSet(Map* map, const void* key, size_t keySize,
-//             const void* value, size_t valueSize);
-//
-// void MapRemove(Map* map, const void* key, size_t keySize);
-//
-// void MapChangeKey(Map* map, const void* key, size_t keySize,
-//                   const void* newKey, size_t newKeySize);
-//
-// void* MapFindValue(Map* map, const void* key, size_t keySize);
-//
-// void* MapFindKey(Map* map, const void* value, size_t valueSize);
-//
-// void* MapGetKeyAt(Map* map, uint64_t index);
-//
-// uint64_t MapGetSize(Map* map);
+
+#include "containers/HashMap.h"
+#include "containers/UniqueArray.h"
+
+typedef struct HashMap {
+    UniqueArray* keys;
+    void* values;
+} HashMap;
+
+// Stride is the size of the each value.
+// This hashmap implementation is not actually hashmap, but similar.
+// Hash function generates an integer hash value from keys.
+// This integer values stored to UniqueArray (sorted set),
+// and every value is stored to an array at same index.
+// The value is not found directly, the binary search result is obtained.
+HashMap* HashMapCreate(size_t stride);
+
+void HashMapFree(HashMap* hmap);
+
+void HashMapSet(HashMap* hmap, const char* key, void* value);
+#define HashMapSetRV(hmap, key, type, value) \
+    {                                        \
+        type temp = value;                   \
+        HashMapSet(hmap, key, &temp);        \
+    }
+
+void* HashMapGet(HashMap* hmap, const char* key);
+
+// Removes key and its value. Returns false if removing fails.
+bool HashMapRemove(HashMap* hmap, const char* key);
+
+bool HashMapContains(HashMap* hmap, const char* key);

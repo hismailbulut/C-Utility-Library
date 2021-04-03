@@ -13,7 +13,6 @@ typedef struct ListNode {
 
 typedef struct List {
     uint64_t* data;
-    MemoryTracker memTracker;
 } List;
 
 /* Creates and empty list. */

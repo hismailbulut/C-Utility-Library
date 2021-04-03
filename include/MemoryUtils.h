@@ -18,23 +18,14 @@ typedef enum CUtilsDataType {
 
 /* Compares two values and returns true if they are equals. False otherwise. */
 bool MemoryEquals(const void* buf1, const void* buf2, size_t size);
-
+// Returns true if the given memory block is 0.
+bool MemoryIsNull(const void* buf, size_t size);
 /* Swaps two given memory blocks. */
 void MemorySwap(void* buf1, void* buf2, size_t size);
 
-// MEMORY TRACKER
+uint64_t c_utils_total_malloc;
+uint64_t c_utils_total_free;
 
-typedef UniqueArray* MemoryTracker;
-
-MemoryTracker MemoryTrackerInit();
-
-void* CUtilsMalloc(size_t size, MemoryTracker memTracker);
-
-void* CUtilsRealloc(void* buf, size_t newSize, MemoryTracker memTracker);
-
-void* _CUtilsFree(void* buf, MemoryTracker memTracker);
-
-#define CUtilsFree(buf, memTracker) \
-    buf = _CUtilsFree(buf, memTracker);
-
-void MemoryTrackerClose(MemoryTracker memTracker);
+void* CUtilsMalloc(size_t size);
+void* CUtilsRealloc(void* buf, size_t newSize);
+void* CUtilsFree(void* buf);

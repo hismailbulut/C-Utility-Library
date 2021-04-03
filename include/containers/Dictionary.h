@@ -17,12 +17,12 @@ typedef struct DictPair {
 
 typedef struct Dictionary {
     uint64_t* data;
-    MemoryTracker memTracker;
 } Dictionary;
 
 /* Creates an empty dictionary. */
 Dictionary* DictionaryCreate();
 
+/* Returns a copy of the given dictionary. */
 Dictionary* DictionaryCopy(Dictionary* dict);
 
 /* Frees all copied values and pointed objects. */
