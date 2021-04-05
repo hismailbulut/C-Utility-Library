@@ -16,8 +16,6 @@ void TimerPause(Timer* timer);
 
 void TimerResume(Timer* timer);
 
-long TimerGetElapsed(Timer* timer);
+double TimerGetElapsed(Timer* timer);
 
 void TimerLogElapsed(Timer* timer);
-
-void TimerWait(long ms);

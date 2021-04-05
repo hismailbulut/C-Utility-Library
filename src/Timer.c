@@ -27,18 +27,11 @@ void TimerResume(Timer* timer) {
     timer->startTime += (clock() - timer->pausedTime);
 }
 
-long TimerGetElapsed(Timer* timer) {
+double TimerGetElapsed(Timer* timer) {
     long time = clock();
-    return time - timer->startTime;
+    return (double)(time - timer->startTime) / CLOCKS_PER_SEC;
 }
 
 void TimerLogElapsed(Timer* timer) {
-    DEBUG_LOG_INFO("Timer %s's elapsed time is %ld ms.",
-                   timer->name, TimerGetElapsed(timer));
-}
-
-void TimerWait(long ms) {
-    long start = clock();
-    while (clock() - start < ms) {
-    }
+    DEBUG_LOG_INFO("Timer %s's elapsed time is %f seconds.", timer->name, TimerGetElapsed(timer));
 }
