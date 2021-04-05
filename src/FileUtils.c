@@ -10,6 +10,16 @@
 #include "MemoryUtils.h"
 #include "StringUtils.h"
 
+#ifndef STDC_LIB_EXT1
+int fopen_s(FILE** file, const char* filepath, const char* mode) {
+	*file = fopen(filepath, mode);
+	if(*file == NULL) {
+		return -1;
+	}
+	return 0;
+}
+#endif
+
 static size_t _GetFileSize(const char* path) {
     struct stat info;
     if (stat(path, &info) == 0) {

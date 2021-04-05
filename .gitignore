@@ -6,6 +6,9 @@ d.bat
 m.bat
 mc.bat
 r.bat
+cm.sh
+m.sh
+r.sh
 
 # Prerequisites
 *.d

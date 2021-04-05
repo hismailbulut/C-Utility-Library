@@ -69,7 +69,7 @@ void test_array() {
 void test_array_performance() {
     TEST_START;
     uint64_t test_size = 10000;
-    DEBUG_LOG_INFO("Test size: %I64u", test_size);
+    DEBUG_LOG_INFO("Test size: %ld", test_size);
     Timer t = TimerCreate("test_array_performance", true);
     int64_t* array = ArrayCreate(int64_t);
     for (uint64_t i = 0; i < test_size; i++) {
@@ -171,7 +171,7 @@ void test_linkedlist() {
 void test_linkedlist_performance() {
     TEST_START;
     uint64_t test_size = 10000;
-    DEBUG_LOG_INFO("Test size: %I64u", test_size);
+    DEBUG_LOG_INFO("Test size: %ld", test_size);
     Timer t = TimerCreate("test_linkedlist_performance", true);
     LinkedList* list = LinkedListCreate(sizeof(int64_t));
     for (uint64_t i = 0; i < test_size; i++) {

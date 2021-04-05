@@ -39,12 +39,12 @@ void MemorySwap(void* buf1, void* buf2, size_t size) {
     }
 }
 
-uint64_t c_utils_total_malloc = 0;
-uint64_t c_utils_total_free = 0;
+// uint64_t c_utils_total_malloc = 0;
+// uint64_t c_utils_total_free = 0;
 
 void* CUtilsMalloc(size_t size) {
     void* buf = malloc(size);
-    c_utils_total_malloc++;
+   // c_utils_total_malloc++;
     memset(buf, 0, size);
     return buf;
 }
@@ -60,6 +60,6 @@ void* CUtilsRealloc(void* buf, size_t newSize) {
 
 void* CUtilsFree(void* buf) {
     free(buf);
-    c_utils_total_free++;
+   // c_utils_total_free++;
     return NULL;
 }
