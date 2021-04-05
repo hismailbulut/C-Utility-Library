@@ -16,8 +16,6 @@ int main(void) {
     test_dictionary_and_json();
     test_unique_array();
     test_hash_map();
- //   DEBUG_LOG_INFO("Total malloc: %I64u, Total free: %I64u",
-   //                c_utils_total_malloc, c_utils_total_free);
-   ASSERT_BREAK(0);
+	DEBUG_LOG_INFO("Total malloc: %u, Total free: %u", (uint32_t)c_utils_total_malloc, (uint32_t)c_utils_total_free);
     return 0;
 }

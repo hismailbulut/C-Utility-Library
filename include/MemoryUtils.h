@@ -23,8 +23,8 @@ bool MemoryIsNull(const void* buf, size_t size);
 /* Swaps two given memory blocks. */
 void MemorySwap(void* buf1, void* buf2, size_t size);
 
-// uint64_t c_utils_total_malloc;
-// uint64_t c_utils_total_free;
+extern uint64_t c_utils_total_malloc;
+extern uint64_t c_utils_total_free;
 
 void* CUtilsMalloc(size_t size);
 void* CUtilsRealloc(void* buf, size_t newSize);
