@@ -1,5 +1,6 @@
 #include "tests.h"
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,6 +38,12 @@ char* test_string_2 = ":1;2:3;4:,;5:6;9898;i:,jkl:,asd:,asdasd,";
 int64_t test_int_array[] = {5, -7, 98, 165, 789, -1, 0, 456, -123, 987};
 float test_float_array[] = {5.45, 7.789, -98.145, 165.002, -789.9, 1.0, 0.5, 456.3, -123.7, 987.0};
 
+typedef struct {
+    int int_data;
+    float float_data;
+    char* string_data;
+} test_struct;
+
 char* rand_string(uint64_t max_len, char from, char to) {
     uint64_t len = rand() % (max_len - 1) + 1;
     char* str = malloc(len + 1);
@@ -69,7 +76,7 @@ void test_array() {
 void test_array_performance() {
     TEST_START;
     uint64_t test_size = 10000;
-    DEBUG_LOG_INFO("Test size: %ld", test_size);
+    DEBUG_LOG_INFO("Test size: %lu", (unsigned long)test_size);
     Timer t = TimerCreate("test_array_performance", true);
     int64_t* array = ArrayCreate(int64_t);
     for (uint64_t i = 0; i < test_size; i++) {
@@ -119,13 +126,13 @@ void test_strings() {
     TEST_END;
 }
 
-void print_uint64_linkedlist(LinkedList* list) {
-    printf("LinkedList: ");
-    for (uint64_t i = 0; i < list->size; i++) {
-        printf("%I64u ", *(uint64_t*)LinkedListGetValue(list, i));
-    }
-    printf("\n");
-}
+// void print_uint64_linkedlist(LinkedList* list) {
+//     printf("LinkedList: ");
+//     for (uint64_t i = 0; i < list->size; i++) {
+//         printf("%I64u ", *(uint64_t*)LinkedListGetValue(list, i));
+//     }
+//     printf("\n");
+// }
 
 void test_linkedlist() {
     TEST_START;
@@ -171,7 +178,7 @@ void test_linkedlist() {
 void test_linkedlist_performance() {
     TEST_START;
     uint64_t test_size = 10000;
-    DEBUG_LOG_INFO("Test size: %ld", test_size);
+    DEBUG_LOG_INFO("Test size: %lu", (unsigned long)test_size);
     Timer t = TimerCreate("test_linkedlist_performance", true);
     LinkedList* list = LinkedListCreate(sizeof(int64_t));
     for (uint64_t i = 0; i < test_size; i++) {
@@ -290,6 +297,47 @@ void print_float_unique_array(UniqueArray* array) {
     printf("\n");
 }
 
+int test_unique_array_int_comparator(const void* v1, const void* v2) {
+    int myval1 = *(int*)v1;
+    int myval2 = *(int*)v2;
+    if (myval1 > myval2) {
+        return 1;
+    } else if (myval1 < myval2) {
+        return -1;
+    }
+    return 0;
+}
+
+void test_unique_array() {
+    TEST_START;
+    UniqueArray* u_arr = UniqueArrayCreate(sizeof(int), 1,
+                                           test_unique_array_int_comparator);
+    UniqueArrayAddRV(u_arr, int, 1);
+    UniqueArrayAddRV(u_arr, int, 11);
+    UniqueArrayAddRV(u_arr, int, 5);
+    UniqueArrayAddRV(u_arr, int, 13);
+    UniqueArrayAddRV(u_arr, int, 4);
+    UniqueArrayAddRV(u_arr, int, 12);
+    UniqueArrayAddRV(u_arr, int, 2);
+    UniqueArrayAddRV(u_arr, int, 3);
+    UniqueArrayAddRV(u_arr, int, 15);
+    UniqueArrayAddRV(u_arr, int, 14);
+
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 0) == 1);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 1) == 2);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 2) == 3);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 3) == 4);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 4) == 5);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 5) == 11);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 6) == 12);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 7) == 13);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 8) == 14);
+    TEST_CHECK(*(int*)UniqueArrayValueAt(u_arr, 9) == 15);
+
+    UniqueArrayFree(u_arr);
+    TEST_END;
+}
+
 int test_unique_array_float_comparator(const void* v1, const void* v2) {
     float myval1 = *(float*)v1;
     float myval2 = *(float*)v2;
@@ -301,41 +349,37 @@ int test_unique_array_float_comparator(const void* v1, const void* v2) {
     return 0;
 }
 
-void test_unique_array() {
+void test_unique_array_performance() {
     TEST_START;
-    uint64_t test_size = 100000;
-    UniqueArray* array = UniqueArrayCreate(sizeof(float), test_size,
+    uint64_t test_size = 50000;
+    DEBUG_LOG_INFO("Test size: %lu", (unsigned long)test_size);
+    Timer t = TimerCreate("test_unique_array_performance", true);
+    UniqueArray* u_arr = UniqueArrayCreate(sizeof(float), test_size,
                                            test_unique_array_float_comparator);
-
-    srand(time(0));
     for (uint64_t i = 0; i < test_size; i++) {
-        float negative = rand() % 2 == 0 ? 1 : -1;
-        float val = (rand() * rand() * 0.0001 * negative) + 1;
-        // printf("%f\n", val);
-        if (UniqueArrayAdd(array, &val)) {
-            TEST_CHECK(UniqueArrayContains(array, &val));
-        }
+        float value = rand() * 0.1;
+        UniqueArrayAdd(u_arr, &value, NULL);
     }
-    for (uint64_t i = 1; i < ArrayGetSize(array->data); i++) {
-        TEST_CHECK(*(float*)UniqueArrayValueAt(array, i - 1) <
-                   *(float*)UniqueArrayValueAt(array, i));
-        // float fb = *(float*)UniqueArrayValueAt(array, i - 1);
-        // float fc = *(float*)UniqueArrayValueAt(array, i);
-        // if (fb >= fc) {
-        // printf("Index: %I64u, fb: %f, fc: %f\n", i, fb, fc);
-        // }
+    for (uint64_t i = 0; i < test_size; i++) {
+        float value = rand() * 0.1;
+        UniqueArrayContains(u_arr, &value, NULL);
     }
-    TEST_END;
+    for (uint64_t i = 0; i < test_size; i++) {
+        float value = rand() * 0.1;
+        UniqueArrayRemove(u_arr, &value, NULL);
+    }
+    UniqueArrayFree(u_arr);
+    TimerLogElapsed(&t);
 }
 
-void print_integer_type_hash_map(HashMap* hmap) {
-    DEBUG_LOG_INFO("HashMap: ");
-    for (uint64_t i = 0; i < UniqueArrayGetSize(hmap->keys); i++) {
-        DEBUG_LOG_INFO("Key hash: %I64u \t Value: %i",
-                       *(uint64_t*)UniqueArrayValueAt(hmap->keys, i),
-                       *(int*)ArrayGetValue(hmap->values, i));
-    }
-}
+// void print_integer_type_hash_map(HashMap* hmap) {
+//     DEBUG_LOG_INFO("HashMap: ");
+//     for (uint64_t i = 0; i < UniqueArrayGetSize(hmap->keys); i++) {
+//         DEBUG_LOG_INFO("Key hash: %I64u \t Value: %i",
+//                        *(uint64_t*)UniqueArrayValueAt(hmap->keys, i),
+//                        *(int*)ArrayGetValue(hmap->values, i));
+//     }
+// }
 
 void test_hash_map() {
     TEST_START;
@@ -365,5 +409,32 @@ void test_hash_map() {
     TEST_CHECK(HashMapGet(hmap, "ferrari") == NULL);
 
     HashMapFree(hmap);
+    TEST_END;
+}
+
+void test_file_write_read_string() {
+    TEST_START;
+    String writed = StringCreateCStr(test_string);
+    TEST_ASSERT(FileUtilsWriteString("test_file_write_read_string", writed));
+    String readed;
+    TEST_ASSERT(FileUtilsReadString("test_file_write_read_string", &readed));
+    TEST_CHECK(StringEquals(&writed, &readed));
+    StringFree(&writed);
+    StringFree(&readed);
+    TEST_END;
+}
+
+void test_file_write_read_binary() {
+    TEST_START;
+    test_struct writed = {256, 3.14, "Ismail Bulut"};
+    TEST_ASSERT(FileUtilsWriteBinary("test_file_write_read_binary", &writed, sizeof(writed)));
+    test_struct* readed;
+    size_t readed_size;
+    TEST_ASSERT(FileUtilsReadBinary("test_file_write_read_binary", (void**)&readed, &readed_size));
+    TEST_CHECK(sizeof(writed) == readed_size);
+    TEST_CHECK(writed.int_data == readed->int_data);
+    TEST_CHECK(writed.float_data == readed->float_data);
+    TEST_CHECK(strcmp(writed.string_data, readed->string_data) == 0);
+    CUtilsFree(readed);
     TEST_END;
 }

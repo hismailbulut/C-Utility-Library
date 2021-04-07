@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef _DEBUG
+#ifdef CUTILS_DEBUG_BUILD
 
 #ifdef _MSC_VER
 #define DEBUG_BREAK __debugbreak()
@@ -93,6 +93,12 @@ ASSERTION FAILED: %s\n\
         }                                                          \
     }
 
+#define RAISE_SIGSEGV        \
+    {                        \
+        int* sigsegv = NULL; \
+        *sigsegv = 0;        \
+    }
+
 #else
 
 #define DEBUG_LOG_INFO(message, args...)
@@ -103,5 +109,10 @@ ASSERTION FAILED: %s\n\
 #define BREAK_MSG(message, args...)
 #define ASSERT_BREAK(cond)
 #define ASSERT_BREAK_MSG(cond, message, args...)
+#define RAISE_SIGSEGV                    \
+    {                                    \
+        printf("Segmentation fault.\n"); \
+        exit(EXIT_FAILURE);              \
+    }
 
-#endif
+#endif  // CUTILS_DEBUG_BUILD

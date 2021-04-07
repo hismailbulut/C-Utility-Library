@@ -35,19 +35,16 @@ UniqueArray* UniqueArrayCreate(size_t stride, size_t capacity,
 void UniqueArrayFree(UniqueArray* uniqueArray);
 
 // Adds the given value to the UniqueArray if not contains it.
-bool UniqueArrayAdd(UniqueArray* uniqueArray, void* value);
+// outIndex is the index where the value pushed or where can it pushed.
+bool UniqueArrayAdd(UniqueArray* uniqueArray, void* value, uint64_t* outIndex);
 
 // Shortcut for adding rvalues to UniqueArray.
 // Note: Return value is forgotten.
 #define UniqueArrayAddRV(uniqueArray, type, value) \
     {                                              \
         type temp = value;                         \
-        UniqueArrayAdd(uniqueArray, &temp);        \
+        UniqueArrayAdd(uniqueArray, &temp, NULL);  \
     }
-
-// Adds the value to the array. Changes value if it founds. Returns
-// index of the value.
-bool UniqueArrayForceAdd(UniqueArray* uniqueArray, void* value, uint64_t* outIndex);
 
 // Removes the given value from UniqueArray if contains.
 bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value, uint64_t* outIndex);
@@ -61,11 +58,7 @@ bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value, uint64_t* outIndex
     }
 
 /* Returns true if given value is in the UniqueArray. False otherwise. */
-bool UniqueArrayContains(UniqueArray* uniqueArray, void* value);
-
-/* Returns index if value founds. Otherwise returns the size of the 
- * array. */
-uint64_t UniqueArrayIndexOf(UniqueArray* uniqueArray, void* value);
+bool UniqueArrayContains(UniqueArray* uniqueArray, void* value, uint64_t* outIndex);
 
 /* Returns pointer to specified value at index. Cast to your type. */
 void* UniqueArrayValueAt(UniqueArray* uniqueArray, uint64_t index);

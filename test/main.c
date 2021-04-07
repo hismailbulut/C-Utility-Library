@@ -15,7 +15,13 @@ int main(void) {
     test_linkedlist_performance();
     test_dictionary_and_json();
     test_unique_array();
+    test_unique_array_performance();
     test_hash_map();
-	DEBUG_LOG_INFO("Total malloc: %u, Total free: %u", (uint32_t)c_utils_total_malloc, (uint32_t)c_utils_total_free);
+    test_file_write_read_string();
+    test_file_write_read_binary();
+    DEBUG_LOG_INFO("Total malloc: %lu, Total free: %lu, Total realloc: %lu",
+                   (unsigned long)c_utils_total_malloc,
+                   (unsigned long)c_utils_total_free,
+                   (unsigned long)c_utils_total_realloc);
     return 0;
 }

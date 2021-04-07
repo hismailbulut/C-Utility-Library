@@ -46,7 +46,7 @@ void HashMapFree(HashMap* hmap) {
 void HashMapSet(HashMap* hmap, const char* key, void* value) {
     uint64_t hash = _Hash(key);
     uint64_t index;
-    if (UniqueArrayForceAdd(hmap->keys, &hash, &index)) {
+    if (UniqueArrayAdd(hmap->keys, &hash, &index)) {
         // this array hasn't got this hash and value, push it
         // DEBUG_LOG_INFO("Hash: %I64u \t Key: %s", hash, key);
         hmap->values = _ArrayPushAt(hmap->values, value, index);
@@ -60,8 +60,7 @@ void HashMapSet(HashMap* hmap, const char* key, void* value) {
 void* HashMapGet(HashMap* hmap, const char* key) {
     uint64_t hash = _Hash(key);
     uint64_t index;
-    if ((index = UniqueArrayIndexOf(hmap->keys, &hash)) !=
-        UniqueArrayGetSize(hmap->keys)) {
+    if (UniqueArrayContains(hmap->keys, &hash, &index)) {
         return ArrayGetValue(hmap->values, index);
     }
     return NULL;
@@ -79,5 +78,5 @@ bool HashMapRemove(HashMap* hmap, const char* key) {
 
 bool HashMapContains(HashMap* hmap, const char* key) {
     uint64_t hash = _Hash(key);
-    return UniqueArrayContains(hmap->keys, &hash);
+    return UniqueArrayContains(hmap->keys, &hash, NULL);
 }

@@ -10,16 +10,6 @@
 #include "MemoryUtils.h"
 #include "StringUtils.h"
 
-#ifndef STDC_LIB_EXT1
-int fopen_s(FILE** file, const char* filepath, const char* mode) {
-	*file = fopen(filepath, mode);
-	if(*file == NULL) {
-		return -1;
-	}
-	return 0;
-}
-#endif
-
 static size_t _GetFileSize(const char* path) {
     struct stat info;
     if (stat(path, &info) == 0) {
@@ -41,13 +31,14 @@ bool FileUtilsReadString(const char* path, String* outString) {
         return false;
     }
     bool success = false;
-    FILE* file;
     char* buffer = CUtilsMalloc(fileSize + 1);
     uint64_t readed;
-    if (fopen_s(&file, path, "r") == 0) {
+    FILE* file = fopen(path, "r");
+    if (file != NULL) {
         if ((readed = fread(buffer, 1, fileSize, file)) > 0) {
             *outString = StringCreateCStr(buffer);
-            StringErase(outString, readed, 0);
+            // printf("Readed: %I64u, size: %I64u, strlen: %I64u\n", readed, fileSize, outString->length);
+            // StringErase(outString, readed, 0);
             success = true;
         }
         fclose(file);
@@ -63,8 +54,8 @@ bool FileUtilsReadString(const char* path, String* outString) {
 
 bool FileUtilsWriteString(const char* path, String string) {
     bool success = false;
-    FILE* file;
-    if (fopen_s(&file, path, "w") == 0) {
+    FILE* file = fopen(path, "w");
+    if (file != NULL) {
         if (fwrite(string.c_str, 1, strlen(string.c_str), file) > 0) {
             success = true;
         }
@@ -78,8 +69,8 @@ bool FileUtilsWriteString(const char* path, String string) {
 
 bool FileUtilsAppendString(const char* path, String string) {
     bool success = false;
-    FILE* file;
-    if (fopen_s(&file, path, "a") == 0) {
+    FILE* file = fopen(path, "a");
+    if (file != NULL) {
         if (fwrite(string.c_str, 1, strlen(string.c_str), file) > 0) {
             success = true;
         }
@@ -98,8 +89,8 @@ bool FileUtilsReadBinary(const char* path, void** outBuffer,
         return false;
     }
     bool success = false;
-    FILE* file;
-    if (fopen_s(&file, path, "rb") == 0) {
+    FILE* file = fopen(path, "rb");
+    if (file != NULL) {
         *outBuffer = CUtilsMalloc(fileSize);
         if (fread(*outBuffer, 1, fileSize, file) > 0) {
             *outBufferSize = fileSize;
@@ -118,8 +109,8 @@ bool FileUtilsReadBinary(const char* path, void** outBuffer,
 
 bool FileUtilsWriteBinary(const char* path, void* buffer, size_t bufferSize) {
     bool success = false;
-    FILE* file;
-    if (fopen_s(&file, path, "wb") == 0) {
+    FILE* file = fopen(path, "wb");
+    if (file != NULL) {
         if (fwrite(buffer, 1, bufferSize, file) > 0) {
             success = true;
         }

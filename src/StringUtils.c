@@ -1,6 +1,5 @@
 #include "StringUtils.h"
 
-#include <assert.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -28,10 +27,10 @@ static void _CheckCapacity(String* string) {
 static char* _CreateStrFormat(const char* Format, va_list args) {
     char* str = NULL;
     int n = vsnprintf(NULL, 0, Format, args);
-    assert(n > 0);
+    ASSERT_BREAK(n > 0);
     str = CUtilsMalloc(n + 1);
     int c = vsnprintf(str, n + 1, Format, args);
-    assert(c == n);
+    ASSERT_BREAK(c == n);
     return str;
 }
 

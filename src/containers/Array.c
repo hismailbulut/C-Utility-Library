@@ -30,8 +30,9 @@ static inline void _FieldSet(const void *array, header_fields field, uint64_t va
 }
 
 static inline void _RaiseIndexOutOfBounds(const void *array, uint64_t index) {
-    DEBUG_LOG_ERROR("Index out of bounds. Index: %I64u, Array Size: %I64u.",
-                    index, ArrayGetSize(array));
+    DEBUG_LOG_ERROR("Index out of bounds. Index: %lu, Array Size: %lu.",
+                    (unsigned long)index, (unsigned long)ArrayGetSize(array));
+    RAISE_SIGSEGV;
 }
 
 void *_ArrayCreate(size_t stride, uint64_t capacity) {

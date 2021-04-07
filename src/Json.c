@@ -41,7 +41,7 @@ static String _ListToString(List* list, uint32_t indentLevel) {
             StringAppendCStr(&s, node->value);
             StringAppendChar(&s, '"');
         } else if (node->dataType == DATA_TYPE_NUMBER) {
-            StringAppendFormat(&s, "%I64i", *(int64_t*)node->value);
+            StringAppendFormat(&s, "%ld", (long)*(int64_t*)node->value);
         } else if (node->dataType == DATA_TYPE_FLOAT) {
             StringAppendFormat(&s, "%f", *(float*)node->value);
         } else if (node->dataType == DATA_TYPE_BOOL) {
@@ -80,7 +80,7 @@ static String _GetValueString(DictPair* pair, uint32_t indentLevel) {
             StringAppendChar(&s, '"');
             break;
         case DATA_TYPE_NUMBER:
-            StringAppendFormat(&s, "%I64i", *(int64_t*)pair->value);
+            StringAppendFormat(&s, "%ld", (long)*(int64_t*)pair->value);
             break;
         case DATA_TYPE_FLOAT:
             StringAppendFormat(&s, "%f", *(float*)pair->value);

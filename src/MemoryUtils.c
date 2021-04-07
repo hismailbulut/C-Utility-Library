@@ -39,18 +39,26 @@ void MemorySwap(void* buf1, void* buf2, size_t size) {
     }
 }
 
+#ifdef CUTILS_TESTS_ENABLED
 uint64_t c_utils_total_malloc = 0;
 uint64_t c_utils_total_free = 0;
+uint64_t c_utils_total_realloc = 0;
+#endif
 
 void* CUtilsMalloc(size_t size) {
     void* buf = malloc(size);
+#ifdef CUTILS_TESTS_ENABLED
     c_utils_total_malloc++;
+#endif
     memset(buf, 0, size);
     return buf;
 }
 
 void* CUtilsRealloc(void* buf, size_t newSize) {
     void* temp = realloc(buf, newSize);
+#ifdef CUTILS_TESTS_ENABLED
+    c_utils_total_realloc++;
+#endif
     if (temp == NULL) {
         DEBUG_LOG_ERROR("CUtilsRealloc: Memory allocation error! Old Buffer returned.");
         return buf;
@@ -60,6 +68,8 @@ void* CUtilsRealloc(void* buf, size_t newSize) {
 
 void* CUtilsFree(void* buf) {
     free(buf);
-   	c_utils_total_free++;
+#ifdef CUTILS_TESTS_ENABLED
+    c_utils_total_free++;
+#endif
     return NULL;
 }

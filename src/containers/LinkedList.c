@@ -49,10 +49,10 @@ static LinkedListNode* _GetNodeAt(LinkedList* list, uint64_t index,
 }
 
 static void _RaiseOutOfBounds(LinkedList* list, uint64_t index) {
-    uint64_t calculated = _CalculateListLength(list);
-    ASSERT_BREAK(calculated == list->size);
-    DEBUG_LOG_ERROR("Index out of bounds. Index: %I64u, LinkedList length: %I64u",
-                    index, list->size);
+    ASSERT_BREAK(_CalculateListLength(list) == list->size);
+    DEBUG_LOG_ERROR("Index out of bounds. Index: %lu, LinkedList length: %lu",
+                    (unsigned long)index, (unsigned long)list->size);
+    RAISE_SIGSEGV;
 }
 // PRIVATE END
 

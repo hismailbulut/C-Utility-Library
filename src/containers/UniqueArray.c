@@ -21,8 +21,6 @@ static bool _FindValue(UniqueArray* uniqueArray, void* value, uint64_t* outIndex
     int prevResult = 0;  // prevResult is only set if index stepping one by one
     while (true) {
         void* arrayValue = ArrayGetValue(uniqueArray->data, index);
-        if (arrayValue == NULL) {
-        }
         int comp = uniqueArray->comparator(arrayValue, value);
         if (comp > 0) {  // array value is bigger than the value
             if (index < step) {
@@ -75,30 +73,20 @@ void UniqueArrayFree(UniqueArray* uniqueArray) {
     CUtilsFree(uniqueArray);
 }
 
-bool UniqueArrayAdd(UniqueArray* uniqueArray, void* value) {
+bool UniqueArrayAdd(UniqueArray* uniqueArray, void* value, uint64_t* outIndex) {
     uint64_t index;
     if (_FindValue(uniqueArray, value, &index)) {
+        if (outIndex) {
+            *outIndex = index;
+        }
         return false;
     } else {
         uniqueArray->data = _ArrayPushAt(uniqueArray->data, value, index);
+        if (outIndex) {
+            *outIndex = index;
+        }
         return true;
     }
-}
-
-bool UniqueArrayForceAdd(UniqueArray* uniqueArray, void* value,
-                         uint64_t* outIndex) {
-    uint64_t index;
-    bool notFound = true;
-    if (_FindValue(uniqueArray, value, &index)) {
-        ArraySetValue(uniqueArray->data, value, index);
-        notFound = false;
-    } else {
-        uniqueArray->data = _ArrayPushAt(uniqueArray->data, value, index);
-    }
-    if (outIndex) {
-        *outIndex = index;
-    }
-    return notFound;
 }
 
 bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value, uint64_t* outIndex) {
@@ -114,17 +102,13 @@ bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value, uint64_t* outIndex
     }
 }
 
-bool UniqueArrayContains(UniqueArray* uniqueArray, void* value) {
+bool UniqueArrayContains(UniqueArray* uniqueArray, void* value, uint64_t* outIndex) {
     uint64_t index;
-    return _FindValue(uniqueArray, value, &index);
-}
-
-uint64_t UniqueArrayIndexOf(UniqueArray* uniqueArray, void* value) {
-    uint64_t index;
-    if (_FindValue(uniqueArray, value, &index)) {
-        return index;
+    bool founded = _FindValue(uniqueArray, value, &index);
+    if (outIndex) {
+        *outIndex = index;
     }
-    return UniqueArrayGetSize(uniqueArray);
+    return founded;
 }
 
 void* UniqueArrayValueAt(UniqueArray* uniqueArray, uint64_t index) {
