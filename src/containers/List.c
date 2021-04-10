@@ -10,9 +10,12 @@
 #include "containers/Array.h"
 #include "containers/Dictionary.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static ListNode* _ListCreateNode(List* list, CUtilsDataType type, void* value) {
     ListNode* node = CUtilsMalloc(sizeof(ListNode));
-    memset(node, 0, sizeof(ListNode));
     node->dataType = type;
     switch (type) {
         case DATA_TYPE_STRING:;
@@ -150,3 +153,7 @@ uint64_t ListGetSize(List* list) {
 uint64_t ListGetCapacity(List* list) {
     return ArrayGetCapacity(list->data);
 }
+
+#ifdef __cplusplus
+}
+#endif

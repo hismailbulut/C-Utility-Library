@@ -8,6 +8,7 @@
 #include "tests.h"
 
 int main(void) {
+    // sandbox();
     test_array();
     test_array_performance();
     test_strings();
@@ -17,6 +18,7 @@ int main(void) {
     test_unique_array();
     test_unique_array_performance();
     test_hash_map();
+    test_hash_map_performance();
     test_file_write_read_string();
     test_file_write_read_binary();
     DEBUG_LOG_INFO("Total malloc: %lu, Total free: %lu, Total realloc: %lu",

@@ -10,6 +10,10 @@
 #include "containers/Array.h"
 #include "containers/List.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // PRIVATE BEGIN
 static void _FreePairValue(Dictionary* dict, DictPair* pair) {
     if (pair->value) {
@@ -137,3 +141,7 @@ void DictionaryRemove(Dictionary* dict, char* key) {
         }
     }
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -6,6 +6,10 @@
 
 #include "containers/UniqueArray.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct UniqueArray {
     /* Data is the array contains the values. You can access elements with
      * casting it to your type. */
@@ -57,6 +61,8 @@ bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value, uint64_t* outIndex
         UniqueArrayRemove(uniqueArray, &temp, NULL);  \
     }
 
+void UniqueArrayRemoveFrom(UniqueArray* uniqueArray, uint64_t index);
+
 /* Returns true if given value is in the UniqueArray. False otherwise. */
 bool UniqueArrayContains(UniqueArray* uniqueArray, void* value, uint64_t* outIndex);
 
@@ -64,3 +70,7 @@ bool UniqueArrayContains(UniqueArray* uniqueArray, void* value, uint64_t* outInd
 void* UniqueArrayValueAt(UniqueArray* uniqueArray, uint64_t index);
 
 uint64_t UniqueArrayGetSize(UniqueArray* uniqueArray);
+
+#ifdef __cplusplus
+}
+#endif

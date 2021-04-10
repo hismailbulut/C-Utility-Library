@@ -9,8 +9,11 @@
 #include "Debug.h"
 #include "MemoryUtils.h"
 
-// PRIVATE BEGIN
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+// PRIVATE BEGIN
 static void _SetNodeValue(LinkedList* list, LinkedListNode* node,
                           const void* value) {
     if (node->value == NULL) {
@@ -192,3 +195,7 @@ void* LinkedListPopAt(LinkedList* list, uint64_t index) {
     }
     return value;
 }
+
+#ifdef __cplusplus
+}
+#endif

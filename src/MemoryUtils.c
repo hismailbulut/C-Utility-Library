@@ -6,6 +6,10 @@
 
 #include "Debug.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 bool MemoryEquals(const void* buf1, const void* buf2, size_t size) {
     const char* b1 = buf1;
     const char* b2 = buf2;
@@ -73,3 +77,7 @@ void* CUtilsFree(void* buf) {
 #endif
     return NULL;
 }
+
+#ifdef __cplusplus
+}
+#endif

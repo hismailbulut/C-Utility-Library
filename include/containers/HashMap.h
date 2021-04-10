@@ -5,9 +5,13 @@
 #include "containers/HashMap.h"
 #include "containers/UniqueArray.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct HashMap {
-    UniqueArray* keys;
-    void* values;
+    UniqueArray* data;
+    size_t stride;
 } HashMap;
 
 // Stride is the size of the each value.
@@ -33,3 +37,7 @@ void* HashMapGet(HashMap* hmap, const char* key);
 bool HashMapRemove(HashMap* hmap, const char* key);
 
 bool HashMapContains(HashMap* hmap, const char* key);
+
+#ifdef __cplusplus
+}
+#endif

@@ -10,6 +10,7 @@ set(CUTILS_LIBRARY_SOURCE_FILES
     "src/containers/UniqueArray.c"
     "src/StringUtils.c"
     "src/MemoryUtils.c"
+    "src/Hash.c"
     "src/FileUtils.c"
     "src/Json.c"
     "src/Timer.c")

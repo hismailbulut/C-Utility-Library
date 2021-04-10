@@ -10,6 +10,10 @@
 #include "Debug.h"
 #include "MemoryUtils.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum header_fields {
     CAPACITY = 0,
     SIZE = 1,
@@ -39,7 +43,7 @@ void *_ArrayCreate(size_t stride, uint64_t capacity) {
     uint64_t create_size = TOTAL * sizeof(uint64_t) + stride * capacity;
     uint64_t *head = CUtilsMalloc(create_size);
     memset(head, 0, create_size);
-    head[CAPACITY] = capacity;
+    head[CAPACITY] = capacity > 0 ? capacity : 1;
     head[SIZE] = 0;
     head[STRIDE] = stride;
     return (void *)(head + TOTAL);
@@ -195,3 +199,7 @@ uint64_t ArrayGetSize(const void *array) {
 uint64_t ArrayGetStride(const void *array) {
     return _FieldGet(array, STRIDE);
 }
+
+#ifdef __cplusplus
+}
+#endif

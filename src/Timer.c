@@ -5,6 +5,10 @@
 
 #include "Debug.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 Timer TimerCreate(const char* name, bool start) {
     Timer timer;
     memset(&timer, 0, sizeof(timer));
@@ -33,5 +37,9 @@ double TimerGetElapsed(Timer* timer) {
 }
 
 void TimerLogElapsed(Timer* timer) {
-    DEBUG_LOG_INFO("Timer %s's elapsed time is %f seconds.", timer->name, TimerGetElapsed(timer));
+    DEBUG_LOG_INFO("Timer '%s' elapsed time is %f seconds.", timer->name, TimerGetElapsed(timer));
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -2,7 +2,7 @@
 
 #ifdef CUTILS_DEBUG_BUILD
 
-#ifdef _MSC_VER
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #define DEBUG_BREAK __debugbreak()
 #else
 #define DEBUG_BREAK __builtin_trap()
@@ -51,17 +51,19 @@ BREAK IN CODE:\n\
         DEBUG_BREAK;                           \
     }
 
-#define BREAK_MSG(message, args...)                     \
-    {                                                   \
-        fprintf(stdout,                                 \
+#define BREAK_MSG(message, args...)            \
+    {                                          \
+        fprintf(stdout,                        \
                 "\
 BREAK IN CODE:\n\
          FILE: %s\n\
          FUNC: %s\n\
          LINE: %d\n\
-      MESSAGE: %s\n",                                   \
-                __FILE__, __func__, __LINE__, message); \
-        DEBUG_BREAK;                                    \
+      MESSAGE: ",                              \
+                __FILE__, __func__, __LINE__); \
+        printf(message, ##args);               \
+        printf("\n");                          \
+        DEBUG_BREAK;                           \
     }
 
 #define ASSERT_BREAK(cond)                                \
@@ -78,19 +80,21 @@ ASSERTION FAILED: %s\n\
         }                                                 \
     }
 
-#define ASSERT_BREAK_MSG(cond, message, args...)                   \
-    {                                                              \
-        if (!(cond)) {                                             \
-            fprintf(stdout,                                        \
+#define ASSERT_BREAK_MSG(cond, message, args...)          \
+    {                                                     \
+        if (!(cond)) {                                    \
+            fprintf(stdout,                               \
                     "\
 ASSERTION FAILED: %s\n\
             FILE: %s\n\
             FUNC: %s\n\
             LINE: %d\n\
-         MESSAGE: %s\n",                                           \
-                    #cond, __FILE__, __func__, __LINE__, message); \
-            DEBUG_BREAK;                                           \
-        }                                                          \
+         MESSAGE: ",                                      \
+                    #cond, __FILE__, __func__, __LINE__); \
+            printf(message, ##args);                      \
+            printf("\n");                                 \
+            DEBUG_BREAK;                                  \
+        }                                                 \
     }
 
 #define RAISE_SIGSEGV        \

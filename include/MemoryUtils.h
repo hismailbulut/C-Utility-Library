@@ -6,6 +6,9 @@
 #include "containers/UniqueArray.h"
 
 // COMMONS
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 typedef enum CUtilsDataType {
     DATA_TYPE_STRING,  //char*
@@ -32,3 +35,7 @@ extern uint64_t c_utils_total_realloc;
 void* CUtilsMalloc(size_t size);
 void* CUtilsRealloc(void* buf, size_t newSize);
 void* CUtilsFree(void* buf);
+
+#ifdef __cplusplus
+}
+#endif

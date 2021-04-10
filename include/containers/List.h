@@ -6,6 +6,10 @@
 #include "MemoryUtils.h"
 #include "containers/List.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct ListNode {
     CUtilsDataType dataType;
     void* value;
@@ -72,3 +76,7 @@ ListNode* ListPopAt(List* list, uint64_t index);
 
 uint64_t ListGetSize(List* list);
 uint64_t ListGetCapacity(List* list);
+
+#ifdef __cplusplus
+}
+#endif

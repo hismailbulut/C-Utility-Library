@@ -5,6 +5,10 @@
 
 #include "MemoryUtils.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct LinkedListNode {
     void* value;
     struct LinkedListNode* next;
@@ -57,3 +61,7 @@ void* LinkedListPop(LinkedList* list);
 /* Pops element at index and returns its value.
  * Don't forget to free the value. */
 void* LinkedListPopAt(LinkedList* list, uint64_t index);
+
+#ifdef __cplusplus
+}
+#endif

@@ -2,6 +2,10 @@
 
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void* _ArrayCreate(size_t stride, uint64_t capacity);
 #define ArrayCreate(type) \
     _ArrayCreate(sizeof(type), 1)
@@ -63,3 +67,7 @@ uint64_t ArrayGetCapacity(const void* array);
 uint64_t ArrayGetSize(const void* array);
 
 uint64_t ArrayGetStride(const void* array);
+
+#ifdef __cplusplus
+}
+#endif

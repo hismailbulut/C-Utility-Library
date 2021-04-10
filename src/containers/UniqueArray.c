@@ -9,11 +9,19 @@
 #include "MemoryUtils.h"
 #include "containers/Array.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Performs binary search on array. OutIndex always be set if not null.
 // If the given value is not founded, outIndex will be the new position
 // of the value.
 static bool _FindValue(UniqueArray* uniqueArray, void* value, uint64_t* outIndex) {
     uint64_t size = ArrayGetSize(uniqueArray->data);
+    if (size == 0) {
+        *outIndex = 0;
+        return false;
+    }
     uint64_t stride = ArrayGetStride(uniqueArray->data);
     uint64_t index = size > 1 ? size / 2 : 0;
     uint64_t step = (index / 2 > 1) ? index / 2 : 1;
@@ -102,6 +110,10 @@ bool UniqueArrayRemove(UniqueArray* uniqueArray, void* value, uint64_t* outIndex
     }
 }
 
+void UniqueArrayRemoveFrom(UniqueArray* uniqueArray, uint64_t index) {
+    CUtilsFree(ArrayPopAt(uniqueArray->data, index));
+}
+
 bool UniqueArrayContains(UniqueArray* uniqueArray, void* value, uint64_t* outIndex) {
     uint64_t index;
     bool founded = _FindValue(uniqueArray, value, &index);
@@ -118,3 +130,7 @@ void* UniqueArrayValueAt(UniqueArray* uniqueArray, uint64_t index) {
 uint64_t UniqueArrayGetSize(UniqueArray* uniqueArray) {
     return ArrayGetSize(uniqueArray->data);
 }
+
+#ifdef __cplusplus
+}
+#endif

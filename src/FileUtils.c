@@ -10,6 +10,10 @@
 #include "MemoryUtils.h"
 #include "StringUtils.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static size_t _GetFileSize(const char* path) {
     struct stat info;
     if (stat(path, &info) == 0) {
@@ -121,3 +125,7 @@ bool FileUtilsWriteBinary(const char* path, void* buffer, size_t bufferSize) {
     }
     return success;
 }
+
+#ifdef __cplusplus
+}
+#endif

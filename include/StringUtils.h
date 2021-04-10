@@ -10,6 +10,10 @@ typedef struct String {
     uint64_t length;
 } String;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 String StringCreate(uint64_t len);
 
 String StringCreateCStr(const char* str);
@@ -51,3 +55,7 @@ void StringTrim(String* string, const char* trimList);
 void StringEncode(String* string, const char* password);
 
 void StringDecode(String* string, const char* password);
+
+#ifdef __cplusplus
+}
+#endif

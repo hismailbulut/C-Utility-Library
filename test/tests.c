@@ -9,6 +9,7 @@
 
 #include "Debug.h"
 #include "FileUtils.h"
+#include "Hash.h"
 #include "Json.h"
 #include "MemoryUtils.h"
 #include "StringUtils.h"
@@ -46,7 +47,7 @@ typedef struct {
 
 char* rand_string(uint64_t max_len, char from, char to) {
     uint64_t len = rand() % (max_len - 1) + 1;
-    char* str = malloc(len + 1);
+    char* str = CUtilsMalloc(len + 1);
     for (uint64_t i = 0; i < len; i++) {
         str[i] = rand() % (to - from) + from;
         ASSERT_BREAK(str[i] >= from);
@@ -54,6 +55,16 @@ char* rand_string(uint64_t max_len, char from, char to) {
     }
     str[len] = 0;
     return str;
+}
+
+void sandbox() {
+    uint8_t* hash = HashMD5("The quick brown fox jumps over the lazy dog");
+    printf("HashMD5: ");
+    for (int i = 0; i < 16; i++) {
+        printf("%x", hash[i]);
+    }
+    printf("\n");
+    CUtilsFree(hash);
 }
 
 void test_array() {
@@ -70,6 +81,7 @@ void test_array() {
         ArrayPushAt(array, val, index);
         TEST_CHECK(array[index] == val);
     }
+    ArrayFree(array);
     TEST_END;
 }
 
@@ -241,12 +253,13 @@ void test_dictionary_and_json() {  // Create dictionary.
     ListPushFloat(list, 546.789);
     ListPushBool(list, true);
 
-    // ListPush(list, DATA_TYPE_LIST, list); // don't do this
+    // you can add recursive
+    ListPush(list, DATA_TYPE_LIST, list);  // don't do this
 
     List* innerList = ListCreate();
     ListPush(innerList, DATA_TYPE_STRING, "string 1");
-    ListPush(innerList, DATA_TYPE_STRING, "string 2");
-    ListPush(innerList, DATA_TYPE_STRING, "string 3");
+    ListPush(innerList, DATA_TYPE_STRING, "\"string\" 2");
+    ListPush(innerList, DATA_TYPE_STRING, "string 3 \n \t \\");
     ListPushNumber(innerList, 65465);
 
     ListPush(list, DATA_TYPE_LIST, innerList);
@@ -263,8 +276,12 @@ void test_dictionary_and_json() {  // Create dictionary.
     // Add list to dictionary.
     DictionarySet(dict, "mylist", DATA_TYPE_LIST, list);
 
+    ListFree(list);
+
     // Get json string.
     String json = JsonCreate(dict);
+
+    FileUtilsWriteString("test_dictionary_and_json.json", json);
 
     // Reparse json string.
     Dictionary* repDict = JsonParse(json);
@@ -289,13 +306,13 @@ void test_dictionary_and_json() {  // Create dictionary.
     TEST_END;
 }
 
-void print_float_unique_array(UniqueArray* array) {
-    printf("Arr: ");
-    for (uint64_t i = 0; i < ArrayGetSize(array->data); i++) {
-        printf("%f ", *(float*)UniqueArrayValueAt(array, i));
-    }
-    printf("\n");
-}
+// void print_float_unique_array(UniqueArray* array) {
+//     printf("Arr: ");
+//     for (uint64_t i = 0; i < ArrayGetSize(array->data); i++) {
+//         printf("%f ", *(float*)UniqueArrayValueAt(array, i));
+//     }
+//     printf("\n");
+// }
 
 int test_unique_array_int_comparator(const void* v1, const void* v2) {
     int myval1 = *(int*)v1;
@@ -392,6 +409,9 @@ void test_hash_map() {
     HashMapSetRV(hmap, "audi", int, 109999);
     HashMapSetRV(hmap, "porche", int, 249000);
     HashMapSetRV(hmap, "ferrari", int, 414999);
+
+    TEST_CHECK(*(int*)HashMapGet(hmap, "ford") = 15450);
+
     // Raise some vehicles
     HashMapSetRV(hmap, "ford", int, 25999);
     HashMapSetRV(hmap, "toyota", int, 30000);
@@ -410,6 +430,22 @@ void test_hash_map() {
 
     HashMapFree(hmap);
     TEST_END;
+}
+
+void test_hash_map_performance() {
+    TEST_START;
+    uint64_t test_size = 50000;
+    DEBUG_LOG_INFO("Test size: %lu", (unsigned long)test_size);
+    Timer t = TimerCreate("test_hash_map_performance", true);
+    HashMap* hmap = HashMapCreate(sizeof(int));
+    srand(time(0));
+    for (uint64_t i = 0; i < test_size; i++) {
+        char* key = rand_string(16, 32, 126);
+        HashMapSetRV(hmap, key, int, rand());
+        CUtilsFree(key);
+    }
+    HashMapFree(hmap);
+    TimerLogElapsed(&t);
 }
 
 void test_file_write_read_string() {

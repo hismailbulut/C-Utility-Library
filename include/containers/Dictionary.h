@@ -9,6 +9,10 @@
 #include "containers/LinkedList.h"
 #include "containers/UniqueArray.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct DictPair {
     char* key;
     CUtilsDataType valueType;
@@ -74,3 +78,7 @@ void DictionaryRemove(Dictionary* dict, char* key);
 /* Looks two given dictionaries and compares them. Returns true if
  * two of the dictionaries is the same. False otherwise. */
 bool DictionariesAreEquals(Dictionary* dict1, Dictionary* dict2);
+
+#ifdef __cplusplus
+}
+#endif

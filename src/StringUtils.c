@@ -13,6 +13,10 @@
 
 #define CHAR_STRIDE sizeof(char)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // PRIVATE BEGIN
 static void _CheckCapacity(String* string) {
     uint64_t size = ArrayGetSize(string->c_str);
@@ -260,3 +264,7 @@ void StringDecode(String* string, const char* password) {
         string->c_str[i] -= password[passIdx++ % passLen];
     }
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -14,7 +14,6 @@
 #include "containers/LinkedList.h"
 #include "containers/List.h"
 
-// PRIVATE BEGIN
 #define APPEND_TABS(str, count)                \
     {                                          \
         for (uint32_t j = 0; j < count; j++) { \
@@ -22,7 +21,43 @@
         }                                      \
     }
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 String _JsonCreate(Dictionary* dict, uint32_t indentLevel);
+
+static String _StringToJsonString(char* str) {
+    uint64_t len = strlen(str);
+    String s = StringCreate(len);
+    StringAppendChar(&s, '"');
+    for (uint64_t i = 0; i < len; i++) {
+        switch (str[i]) {
+            case '\\':
+                StringAppendCStr(&s, "\\\\");
+                break;
+            case '"':
+                StringAppendCStr(&s, "\\\"");
+                break;
+            case '\n':
+                StringAppendCStr(&s, "\\n");
+                break;
+            case '\t':
+                StringAppendCStr(&s, "\\t");
+                break;
+            default:
+                if (str[i] < 32) {  // escape sequence
+                    DEBUG_LOG_WARN("JsonCreate: Unsupported escape sequence.");
+                } else {
+                    StringAppendChar(&s, str[i]);
+                }
+                break;
+                // TODO: add other escape sequences
+        }
+    }
+    StringAppendChar(&s, '"');
+    return s;
+}
 
 static String _ListToString(List* list, uint32_t indentLevel) {
     uint64_t listSize = ListGetSize(list);
@@ -32,32 +67,43 @@ static String _ListToString(List* list, uint32_t indentLevel) {
         ListNode* node = ListGetValue(list, i);
         StringAppendChar(&s, '\n');
         APPEND_TABS(s, indentLevel);
-        if (node == NULL) {
-            StringAppendCStr(&s, "null");
-        } else if (node->value == NULL) {
-            StringAppendCStr(&s, "null");
-        } else if (node->dataType == DATA_TYPE_STRING) {
-            StringAppendChar(&s, '"');
-            StringAppendCStr(&s, node->value);
-            StringAppendChar(&s, '"');
-        } else if (node->dataType == DATA_TYPE_NUMBER) {
-            StringAppendFormat(&s, "%ld", (long)*(int64_t*)node->value);
-        } else if (node->dataType == DATA_TYPE_FLOAT) {
-            StringAppendFormat(&s, "%f", *(float*)node->value);
-        } else if (node->dataType == DATA_TYPE_BOOL) {
-            if (*(bool*)node->value) {
-                StringAppendCStr(&s, "true");
-            } else {
-                StringAppendCStr(&s, "false");
+        if (node->value) {
+            switch (node->dataType) {
+                case DATA_TYPE_STRING: {
+                    String jstr = _StringToJsonString(node->value);
+                    StringAppend(&s, &jstr);
+                    StringFree(&jstr);
+                    break;
+                }
+                case DATA_TYPE_NUMBER:
+                    StringAppendFormat(&s, "%ld", (long)*(int64_t*)node->value);
+                    break;
+                case DATA_TYPE_FLOAT:
+                    StringAppendFormat(&s, "%f", *(float*)node->value);
+                    break;
+                case DATA_TYPE_BOOL:
+                    if (*(bool*)node->value) {
+                        StringAppendCStr(&s, "true");
+                    } else {
+                        StringAppendCStr(&s, "false");
+                    }
+                    break;
+                case DATA_TYPE_LIST: {
+                    String listString = _ListToString(node->value, indentLevel + 1);
+                    StringAppend(&s, &listString);
+                    StringFree(&listString);
+                    break;
+                }
+                case DATA_TYPE_OBJECT: {
+                    String objectString = _JsonCreate(node->value, indentLevel + 1);
+                    StringAppend(&s, &objectString);
+                    StringFree(&objectString);
+                    break;
+                }
+                default:
+                    StringAppendCStr(&s, "null");
+                    break;
             }
-        } else if (node->dataType == DATA_TYPE_LIST) {
-            String listString = _ListToString(node->value, indentLevel + 1);
-            StringAppend(&s, &listString);
-            StringFree(&listString);
-        } else if (node->dataType == DATA_TYPE_OBJECT) {
-            String objectString = _JsonCreate(node->value, indentLevel + 1);
-            StringAppend(&s, &objectString);
-            StringFree(&objectString);
         } else {
             StringAppendCStr(&s, "null");
         }
@@ -74,11 +120,12 @@ static String _ListToString(List* list, uint32_t indentLevel) {
 static String _GetValueString(DictPair* pair, uint32_t indentLevel) {
     String s = StringCreate(1);
     switch (pair->valueType) {
-        case DATA_TYPE_STRING:
-            StringAppendChar(&s, '"');
-            StringAppendCStr(&s, pair->value);
-            StringAppendChar(&s, '"');
+        case DATA_TYPE_STRING: {
+            String jstr = _StringToJsonString(pair->value);
+            StringAppend(&s, &jstr);
+            StringFree(&jstr);
             break;
+        }
         case DATA_TYPE_NUMBER:
             StringAppendFormat(&s, "%ld", (long)*(int64_t*)pair->value);
             break;
@@ -132,7 +179,6 @@ String _JsonCreate(Dictionary* dict, uint32_t indentLevel) {
     StringAppendChar(&json, '}');
     return json;
 }
-// PRIVATE END
 
 String JsonCreate(Dictionary* dict) {
     return _JsonCreate(dict, 1);
@@ -165,22 +211,50 @@ typedef struct {
 } _JsonReadStatus;
 
 static inline void _RaiseJsonReadError(const char* message, _JsonReadStatus* status) {
-    DEBUG_LOG_ERROR("Json Reader : %s At index: %I64u",
-                    message, status->index);
+    DEBUG_LOG_ERROR("Json Reader: %s At index: %lu",
+                    message, (unsigned long)status->index);
     status->errorCount++;
 }
 
-static uint64_t _FindStringEnd(_JsonReadStatus* status, uint64_t start) {
-    char* str = status->jsonText.c_str;
+static String _ReadString(_JsonReadStatus* status, uint64_t start, uint64_t* outEnd) {
+    String s = StringCreate(1);
+    bool escape = false;
     for (uint64_t i = start; i < status->jsonText.length; i++) {
-        if (str[i] == '"') {
-            if (i > 0 && str[i - 1] == '\\') {
-                continue;
+        if (escape) {
+            switch (status->jsonText.c_str[i]) {
+                case '\\':
+                    StringAppendChar(&s, '\\');
+                    break;
+                case '"':
+                    StringAppendChar(&s, '"');
+                    break;
+                case 'n':
+                    StringAppendChar(&s, '\n');
+                    break;
+                case 't':
+                    StringAppendChar(&s, '\t');
+                    break;
+                default:
+                    _RaiseJsonReadError("Unsupported escape sequence.", status);
+                    StringAppendChar(&s, status->jsonText.c_str[i]);
+                    break;
             }
-            return i;
+            escape = false;
+        } else {
+            switch (status->jsonText.c_str[i]) {
+                case '\\':
+                    escape = true;
+                    break;
+                case '"':
+                    *outEnd = i;
+                    return s;
+                default:
+                    StringAppendChar(&s, status->jsonText.c_str[i]);
+                    break;
+            }
         }
     }
-    return 0;
+    return s;
 }
 
 static uint64_t _FindEnd(_JsonReadStatus* status, uint64_t start, char begin, char end) {
@@ -201,13 +275,15 @@ static uint64_t _FindEnd(_JsonReadStatus* status, uint64_t start, char begin, ch
 }
 
 static int _IsNumber(char c) {
-    if (c == '0' || c == '1' || c == '2' || c == '3' || c == '4' ||
-        c == '5' || c == '6' || c == '7' || c == '8' || c == '9') {
-        return 1;
-    } else if (c == '.') {  // FLOAT
-        return 2;
-    } else if (c == '-') {  // NEGATIVE
-        return -1;
+    switch (c) {
+            // clang-format off
+        case '0': case '1': case '2': case '3': case '4':
+        case '5': case '6': case '7': case '8': case '9':
+        case '+': case '-': // optional
+            // clang-format on
+            return 1;  // number
+        case '.':
+            return 2;  // float
     }
     return 0;
 }
@@ -220,73 +296,74 @@ static _TokenInformation _GetNextToken(_JsonReadStatus* status) {
     uint64_t tokenEnd = 0;
     for (uint64_t i = status->index; i < status->jsonText.length; i++) {
         char c = status->jsonText.c_str[i];
-        if (0) {
-        } else if (c == '{') {  // OBJECT
-            if (status->level == 0) {
-                status->level++;
-                continue;
-            }
-            status->level++;
-            tokenInfo.tokenType = TOKEN_OBJECT;
-            if ((tokenEnd = _FindEnd(status, i + 1, '{', '}'))) {
-                tokenInfo.token = StringSubString(&status->jsonText, i, tokenEnd + 1);
-                status->index = tokenEnd + 1;
-                return tokenInfo;
-            } else {
-                _RaiseJsonReadError("Can't find end of the object.", status);
-                continue;
-            }
-        } else if (c == '[') {  // LIST
-            if ((tokenEnd = _FindEnd(status, i + 1, '[', ']'))) {
-                tokenInfo.tokenType = TOKEN_LIST;
-                tokenInfo.token = StringSubString(&status->jsonText, i + 1, tokenEnd);
-                status->index = tokenEnd + 1;
-                return tokenInfo;
-            } else {
-                _RaiseJsonReadError("Can't find end of the array.", status);
-                continue;
-            }
-        } else if (c == '"') {  // STRING
-            tokenInfo.tokenType = TOKEN_STRING;
-            if ((tokenEnd = _FindStringEnd(status, i + 1))) {
-                tokenInfo.token = StringSubString(&status->jsonText, i + 1, tokenEnd);
-                status->index = tokenEnd + 1;
-                return tokenInfo;
-            } else {
-                _RaiseJsonReadError("Can't find end of the string.", status);
-                continue;
-            }
-        } else if (c == ':') {  // END OF THE KEY
-            status->keyReaded = true;
-            continue;
-        } else if (c == ',') {  // END OF THE VALUE
-            status->keyReaded = false;
-            continue;
-        } else if (c == 'n') {  // NULL
-            tokenInfo.tokenType = TOKEN_NULL;
-            status->index = i + 4;
-            return tokenInfo;
-        } else if (c == 't') {  // TRUE
-            tokenInfo.tokenType = TOKEN_TRUE;
-            status->index = i + 4;
-            return tokenInfo;
-        } else if (c == 'f') {  // FALSE
-            tokenInfo.tokenType = TOKEN_FALSE;
-            status->index = i + 5;
-            return tokenInfo;
-        } else if (_IsNumber(c)) {  // NUMBER
-            int end = i;
-            int number;
-            tokenInfo.tokenType = TOKEN_NUMBER;
-            while ((number = _IsNumber(status->jsonText.c_str[end]))) {
-                if (number == 2) {  // FLOAT
-                    tokenInfo.tokenType = TOKEN_FLOAT;
+        switch (c) {
+            case '{': {  // OBJECT
+                if (status->level == 0) {
+                    status->level++;
+                    break;
                 }
-                end++;
+                status->level++;
+                tokenInfo.tokenType = TOKEN_OBJECT;
+                if ((tokenEnd = _FindEnd(status, i + 1, '{', '}'))) {
+                    tokenInfo.token = StringSubString(&status->jsonText, i, tokenEnd + 1);
+                    status->index = tokenEnd + 1;
+                    return tokenInfo;
+                } else {
+                    _RaiseJsonReadError("Can't find end of the object.", status);
+                }
+                break;
             }
-            tokenInfo.token = StringSubString(&status->jsonText, i, end);
-            status->index = end;
-            return tokenInfo;
+            case '[': {  //LIST
+                if ((tokenEnd = _FindEnd(status, i + 1, '[', ']'))) {
+                    tokenInfo.tokenType = TOKEN_LIST;
+                    tokenInfo.token = StringSubString(&status->jsonText, i + 1, tokenEnd);
+                    status->index = tokenEnd + 1;
+                    return tokenInfo;
+                } else {
+                    _RaiseJsonReadError("Can't find end of the array.", status);
+                }
+                break;
+            }
+            case '"': {  //STRING
+                tokenInfo.tokenType = TOKEN_STRING;
+                tokenInfo.token = _ReadString(status, i + 1, &tokenEnd);
+                status->index = tokenEnd + 1;
+                return tokenInfo;
+            }
+            case ':':  //END OF A KEY
+                status->keyReaded = true;
+                break;
+            case ',':  //END OF A VALUE
+                status->keyReaded = false;
+                break;
+            case 'n':  //NULL
+                tokenInfo.tokenType = TOKEN_NULL;
+                status->index = i + 4;
+                return tokenInfo;
+            case 't':  //TRUE
+                tokenInfo.tokenType = TOKEN_TRUE;
+                status->index = i + 4;
+                return tokenInfo;
+            case 'f':  //FALSE
+                tokenInfo.tokenType = TOKEN_FALSE;
+                status->index = i + 5;
+                return tokenInfo;
+            default:
+                if (_IsNumber(c)) {
+                    tokenInfo.tokenType = TOKEN_NUMBER;
+                    tokenEnd = i;
+                    int number;
+                    while ((number = _IsNumber(status->jsonText.c_str[tokenEnd]))) {
+                        if (number == 2) {  // FLOAT
+                            tokenInfo.tokenType = TOKEN_FLOAT;
+                        }
+                        tokenEnd++;
+                    }
+                    tokenInfo.token = StringSubString(&status->jsonText, i, tokenEnd);
+                    status->index = tokenEnd;
+                    return tokenInfo;
+                }
+                break;
         }
     }
     return tokenInfo;
@@ -310,11 +387,8 @@ static List* _CreateListFromToken(_TokenInformation info, _JsonReadStatus* statu
             case TOKEN_FALSE:
                 ListPushBool(list, false);
                 break;
-            case TOKEN_STRING:;
-                String s = StringCreate(1);
-                StringAppend(&s, &tokenInfo.token);
-                ListPush(list, DATA_TYPE_STRING, s.c_str);
-                StringFree(&s);
+            case TOKEN_STRING:
+                ListPush(list, DATA_TYPE_STRING, tokenInfo.token.c_str);
                 StringFree(&tokenInfo.token);
                 break;
             case TOKEN_NUMBER:
@@ -325,18 +399,20 @@ static List* _CreateListFromToken(_TokenInformation info, _JsonReadStatus* statu
                 ListPushFloat(list, atof(tokenInfo.token.c_str));
                 StringFree(&tokenInfo.token);
                 break;
-            case TOKEN_LIST:;
-                List* l = _CreateListFromToken(tokenInfo, &listStatus);
-                ListPush(list, DATA_TYPE_LIST, l);
-                ListFree(l);
+            case TOKEN_LIST: {
+                List* v = _CreateListFromToken(tokenInfo, &listStatus);
+                ListPush(list, DATA_TYPE_LIST, v);
+                ListFree(v);
                 StringFree(&tokenInfo.token);
                 break;
-            case TOKEN_OBJECT:;
-                Dictionary* d = JsonParse(tokenInfo.token);
-                ListPush(list, DATA_TYPE_OBJECT, d);
-                DictionaryFree(d);
+            }
+            case TOKEN_OBJECT: {
+                Dictionary* v = JsonParse(tokenInfo.token);
+                ListPush(list, DATA_TYPE_OBJECT, v);
+                DictionaryFree(v);
                 StringFree(&tokenInfo.token);
                 break;
+            }
         }
         tokenInfo = _GetNextToken(&listStatus);
     }
@@ -349,40 +425,40 @@ static void _SetNextDictValue(Dictionary* dict, char* key,
     switch (tokenInfo.tokenType) {
         case TOKEN_NULL:
             DictionarySet(dict, key, -1, NULL);
-            break;
+            return;
         case TOKEN_TRUE:
             DictionarySetBool(dict, key, true);
-            break;
+            return;
         case TOKEN_FALSE:
             DictionarySetBool(dict, key, false);
-            break;
+            return;
         case TOKEN_STRING:
             DictionarySetString(dict, key, tokenInfo.token.c_str);
-            StringFree(&tokenInfo.token);
             break;
-        case TOKEN_NUMBER:;
-            int64_t num = atoll(tokenInfo.token.c_str);
-            DictionarySet(dict, key, DATA_TYPE_NUMBER, &num);
-            StringFree(&tokenInfo.token);
+        case TOKEN_NUMBER: {
+            int64_t v = atoll(tokenInfo.token.c_str);
+            DictionarySet(dict, key, DATA_TYPE_NUMBER, &v);
             break;
-        case TOKEN_FLOAT:;
-            float f = atof(tokenInfo.token.c_str);
-            DictionarySet(dict, key, DATA_TYPE_FLOAT, &f);
-            StringFree(&tokenInfo.token);
+        }
+        case TOKEN_FLOAT: {
+            float v = atof(tokenInfo.token.c_str);
+            DictionarySet(dict, key, DATA_TYPE_FLOAT, &v);
             break;
-        case TOKEN_OBJECT:;
-            Dictionary* d = JsonParse(tokenInfo.token);
-            DictionarySet(dict, key, DATA_TYPE_OBJECT, d);
-            DictionaryFree(d);
-            StringFree(&tokenInfo.token);
+        }
+        case TOKEN_OBJECT: {
+            Dictionary* v = JsonParse(tokenInfo.token);
+            DictionarySet(dict, key, DATA_TYPE_OBJECT, v);
+            DictionaryFree(v);
             break;
-        case TOKEN_LIST:;
-            List* l = _CreateListFromToken(tokenInfo, status);
-            DictionarySet(dict, key, DATA_TYPE_LIST, l);
-            ListFree(l);
-            StringFree(&tokenInfo.token);
+        }
+        case TOKEN_LIST: {
+            List* v = _CreateListFromToken(tokenInfo, status);
+            DictionarySet(dict, key, DATA_TYPE_LIST, v);
+            ListFree(v);
             break;
+        }
     }
+    StringFree(&tokenInfo.token);
 }
 
 Dictionary* JsonParse(String jsonString) {
@@ -401,9 +477,13 @@ Dictionary* JsonParse(String jsonString) {
             break;
         }
     }
-    if (status.errorCount) {
+    if (status.errorCount > 0) {
         DEBUG_LOG_ERROR("Json parsing failed. %u total errors.",
                         status.errorCount);
     }
     return dict;
 }
+
+#ifdef __cplusplus
+}
+#endif
