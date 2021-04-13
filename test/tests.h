@@ -34,6 +34,7 @@ void test_linkedlist_performance();
 void test_dictionary_and_json();
 void test_unique_array();
 void test_unique_array_performance();
+void test_hash_algorithms();
 void test_hash_map();
 void test_hash_map_performance();
 void test_file_write_read_string();

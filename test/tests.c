@@ -58,13 +58,6 @@ char* rand_string(uint64_t max_len, char from, char to) {
 }
 
 void sandbox() {
-    uint8_t* hash = HashMD5("The quick brown fox jumps over the lazy dog");
-    printf("HashMD5: ");
-    for (int i = 0; i < 16; i++) {
-        printf("%x", hash[i]);
-    }
-    printf("\n");
-    CUtilsFree(hash);
 }
 
 void test_array() {
@@ -387,6 +380,35 @@ void test_unique_array_performance() {
     }
     UniqueArrayFree(u_arr);
     TimerLogElapsed(&t);
+}
+
+void test_hash_algorithms() {
+    TEST_START;
+    const char* key = "The quick brown fox jumps over the lazy dog";
+    // SIMPLE 64 BIT HASH FUNCTION
+    TEST_CHECK(Hash_64(key, strlen(key)) == Hash_64(key, strlen(key)));
+    // MD5
+    uint8_t* md5_hash = Hash_MD5_128(key, strlen(key));
+    String md5_str = StringCreate(32);
+    for (int i = 0; i < 16; i++) {
+        StringAppendFormat(&md5_str, "%02x", md5_hash[i]);
+    }
+    DEBUG_LOG_INFO("MD5: %s", md5_str.c_str);
+    TEST_CHECK(strcmp(md5_str.c_str, "9e107d9d372bb6826bd81d3542a419d6") == 0);
+    CUtilsFree(md5_hash);
+    StringFree(&md5_str);
+    // SHA256
+    uint8_t* sha256_hash = Hash_SHA2_256(key, strlen(key));
+    String sha256_str = StringCreate(64);
+    for (int i = 0; i < 32; i++) {
+        StringAppendFormat(&sha256_str, "%02x", sha256_hash[i]);
+    }
+    DEBUG_LOG_INFO("SHA256: %s", sha256_str.c_str);
+    TEST_CHECK(strcmp(sha256_str.c_str,
+                      "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592") == 0);
+    CUtilsFree(sha256_hash);
+    StringFree(&sha256_str);
+    TEST_END;
 }
 
 // void print_integer_type_hash_map(HashMap* hmap) {

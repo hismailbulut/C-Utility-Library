@@ -5,9 +5,11 @@
 
 #include "Debug.h"
 #include "MemoryUtils.h"
+#include "Timer.h"
 #include "tests.h"
 
 int main(void) {
+    Timer t = TimerCreate("c_utils_test", true);
     // sandbox();
     test_array();
     test_array_performance();
@@ -17,6 +19,7 @@ int main(void) {
     test_dictionary_and_json();
     test_unique_array();
     test_unique_array_performance();
+    test_hash_algorithms();
     test_hash_map();
     test_hash_map_performance();
     test_file_write_read_string();
@@ -25,5 +28,6 @@ int main(void) {
                    (unsigned long)c_utils_total_malloc,
                    (unsigned long)c_utils_total_free,
                    (unsigned long)c_utils_total_realloc);
+    TimerLogElapsed(&t);
     return 0;
 }

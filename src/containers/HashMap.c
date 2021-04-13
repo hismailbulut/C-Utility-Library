@@ -27,13 +27,7 @@ typedef struct {
 } _HashNode;
 
 static uint64_t _Hash(const char* key) {
-    uint8_t* md5 = HashMD5(key);
-    uint64_t hash = 0;
-    memcpy((uint8_t*)&hash + 0, md5 + 0, 2);
-    memcpy((uint8_t*)&hash + 2, md5 + 4, 2);
-    memcpy((uint8_t*)&hash + 4, md5 + 8, 2);
-    memcpy((uint8_t*)&hash + 6, md5 + 12, 2);
-    CUtilsFree(md5);
+    uint64_t hash = Hash_64(key, strlen(key));
     return hash;
 }
 
