@@ -27,14 +27,13 @@ typedef struct {
 } _HashNode;
 
 static uint64_t _Hash(const char* key) {
-    uint64_t hash = Hash_64(key, strlen(key));
-    return hash;
+    return Hash_64(key, strlen(key));
 }
 
 #if defined(CUTILS_DEBUG_BUILD) && defined(CUTILS_TESTS_ENABLED)
 static void _CheckCollision(HashMap* hmap, const char* key1, const char* key2) {
     if (strcmp(key1, key2) != 0) {
-        DEBUG_LOG_ERROR("Collision! (Key: %s, Hash: %I64u), (Key: %s, Hash: %I64u)",
+        DEBUG_LOG_ERROR("Collision! (Key: %s, Hash: %I64u), (Key: %s, Hash: %I64u) Please open issue.",
                         key1, _Hash(key1), key2, _Hash(key2));
         DEBUG_LOG_INFO("HashMap size: %I64u", UniqueArrayGetSize(hmap->data));
         HashMapFree(hmap);

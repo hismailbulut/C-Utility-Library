@@ -387,6 +387,7 @@ void test_hash_algorithms() {
     const char* key = "The quick brown fox jumps over the lazy dog";
     // SIMPLE 64 BIT HASH FUNCTION
     TEST_CHECK(Hash_64(key, strlen(key)) == Hash_64(key, strlen(key)));
+    DEBUG_LOG_INFO("Hash_64: %016llx", Hash_64(key, strlen(key)));
     // MD5
     uint8_t* md5_hash = Hash_MD5_128(key, strlen(key));
     String md5_str = StringCreate(32);
@@ -462,7 +463,7 @@ void test_hash_map_performance() {
     HashMap* hmap = HashMapCreate(sizeof(int));
     srand(time(0));
     for (uint64_t i = 0; i < test_size; i++) {
-        char* key = rand_string(16, 32, 126);
+        char* key = rand_string(128, 32, 126);
         HashMapSetRV(hmap, key, int, rand());
         CUtilsFree(key);
     }

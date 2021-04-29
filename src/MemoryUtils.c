@@ -5,6 +5,8 @@
 #include <string.h>
 
 #include "Debug.h"
+#include "containers/HashMap.h"
+#include "containers/UniqueArray.h"
 
 #ifdef __cplusplus
 extern "C" {
